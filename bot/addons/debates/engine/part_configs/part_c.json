@@ -1,0 +1,63 @@
+{
+  "part_id": "C",
+  "title": "Coder Firm — Compliance, Security, Cost & Rollout",
+  "canonical_atom_categories": [
+    "security-no-self-mod",
+    "security-path-escape",
+    "security-shell-substring-blacklist",
+    "security-secret-scrubbing",
+    "skill-install-gate",
+    "skill-allowlist-evolution",
+    "skill-blacklist",
+    "focus-invariant-enforcement",
+    "on-task-violation-handling",
+    "hermes-write-only-access",
+    "audit-trail-completeness",
+    "cost-cap-enforcement",
+    "cost-tier-reaffirmation",
+    "conflict-resolution-protocol",
+    "rollout-version-flag",
+    "rollout-zero-regression",
+    "fixtures-coverage",
+    "acceptance-criteria",
+    "glossary-completeness",
+    "out-of-scope-clarity"
+  ],
+  "canonical_clusters": [
+    "security-hardening-gates",
+    "skill-lifecycle-management",
+    "focus-invariant-firewall",
+    "hermes-comm-isolation",
+    "audit-trail-pipeline",
+    "cost-control-ledger",
+    "conflict-resolution-machinery",
+    "rollout-strategy-version-flags",
+    "fixtures-and-acceptance",
+    "glossary-and-scope-boundaries"
+  ],
+  "debater_voices": {
+    "viktor_a": {
+      "voice_label": "compliance/audit-first (D5 role)",
+      "expected_focus": [
+        "audit-trail-completeness",
+        "cost-cap-enforcement",
+        "security-no-self-mod",
+        "skill-install-gate",
+        "conflict-resolution-protocol"
+      ]
+    },
+    "viktor_b": {
+      "voice_label": "UX/owner-friction-minimiser (D6 role)",
+      "expected_focus": [
+        "skill-allowlist-evolution",
+        "on-task-violation-handling",
+        "hermes-write-only-access",
+        "rollout-version-flag",
+        "out-of-scope-clarity"
+      ]
+    }
+  },
+  "reference_text_ids": ["editor_01", "editor_02"],
+  "min_final_briefs": 10,
+  "max_final_briefs": 15
+}

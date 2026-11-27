@@ -1,0 +1,38 @@
+{
+  "part_id": "generic",
+  "title": "Generic Debate — configurable via TZ",
+  "canonical_atom_categories": [
+    "architecture",
+    "core_logic",
+    "data_model",
+    "api_design",
+    "error_handling",
+    "security",
+    "performance",
+    "testing",
+    "integration",
+    "user_experience"
+  ],
+  "canonical_clusters": [
+    "foundation",
+    "implementation",
+    "quality",
+    "delivery",
+    "operations"
+  ],
+  "debater_voices": [
+    {
+      "debater_id": "debater_1",
+      "voice_label": "Architect",
+      "style_hint": "Focus on structure, patterns, correctness"
+    },
+    {
+      "debater_id": "debater_2",
+      "voice_label": "Critic",
+      "style_hint": "Find flaws, edge cases, risks"
+    }
+  ],
+  "reference_text_ids": [],
+  "min_final_briefs": 5,
+  "max_final_briefs": 10
+}

@@ -1,0 +1,41 @@
+{
+  "part_id": "B",
+  "title": "Coder Firm — Runtime, Communication, Observability",
+  "canonical_atom_categories": [
+    "fsm-state-transitions",
+    "comm-channel-architecture",
+    "comm-throttling",
+    "comm-payload-strategy",
+    "filesystem-mailbox-layout",
+    "persistence-db-schema",
+    "gate-cascade-order",
+    "llm-brain-heterogeneity",
+    "cost-ledger",
+    "status-card-format",
+    "trace-id-propagation",
+    "health-snapshots",
+    "role-orchestration",
+    "observability-events",
+    "out-of-scope-clarity"
+  ],
+  "canonical_clusters": [
+    "comm-channel-architecture",
+    "comm-throttling",
+    "comm-payload-strategy",
+    "filesystem-mailbox-layout",
+    "persistence-db-schema",
+    "fsm-state-transitions",
+    "gate-cascade-order",
+    "llm-brain-heterogeneity",
+    "cost-ledger",
+    "status-card-format",
+    "observability"
+  ],
+  "debater_voices": {
+    "viktor_a": {"voice_label": "runtime-pragmatic", "expected_focus": []},
+    "viktor_b": {"voice_label": "ops-strict", "expected_focus": []}
+  },
+  "reference_text_ids": ["editor_01", "editor_02"],
+  "min_final_briefs": 9,
+  "max_final_briefs": 13
+}

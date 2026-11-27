@@ -1,0 +1,39 @@
+{
+  "part_id": "A",
+  "title": "Coder Firm — Architecture & Roles",
+  "canonical_atom_categories": [
+    "firm-topology",
+    "boss-design",
+    "fallback-singletons",
+    "worker-pool-shape",
+    "tool-adapter-contract",
+    "mailbox-schema",
+    "lease-fsm",
+    "persona-namespace",
+    "shared-storage-rules",
+    "external-channel-mirofish",
+    "boss-recovery",
+    "out-of-scope-clarity"
+  ],
+  "canonical_clusters": [
+    "firm-topology",
+    "boss-design",
+    "worker-pool",
+    "tool-adapter",
+    "mailbox",
+    "lease-fsm",
+    "persona-namespace",
+    "shared-storage",
+    "external-channel-mirofish",
+    "recovery-rollback",
+    "scope-boundaries",
+    "fallback-singletons"
+  ],
+  "debater_voices": {
+    "viktor_a": {"voice_label": "architecture-first / scalability-aware", "expected_focus": []},
+    "viktor_b": {"voice_label": "safety-first / immutables-paranoid", "expected_focus": []}
+  },
+  "reference_text_ids": ["editor_01", "editor_02"],
+  "min_final_briefs": 10,
+  "max_final_briefs": 14
+}
