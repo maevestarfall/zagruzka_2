@@ -1,0 +1,126 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "livemap-events.schema.json",
+  "title": "Live project map events (ТЗ «Живая карта проекта» v6.1, раздел 5.2)",
+  "description": "Every WS frame carries v:1. A frame is either a single event, a batch {v, batch:[event...]}, or a control frame (resync). Clients ignore frames with v greater than they know (forward compatibility).",
+  "oneOf": [
+    { "$ref": "#/definitions/event" },
+    { "$ref": "#/definitions/batch" },
+    { "$ref": "#/definitions/resync" },
+    { "$ref": "#/definitions/snapshot" }
+  ],
+  "definitions": {
+    "snapshot": {
+      "type": "object",
+      "required": ["v", "type", "epoch", "seq", "tasks"],
+      "properties": {
+        "v": { "type": "integer", "minimum": 1 },
+        "type": { "const": "snapshot" },
+        "epoch": { "type": "string" },
+        "seq": { "type": "integer", "minimum": 0 },
+        "graph_hash": { "type": "string" },
+        "server_ts": { "type": "number" },
+        "tasks": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "type": "object",
+            "required": ["task_id"],
+            "properties": {
+              "task_id": { "type": "string" },
+              "task_text": { "type": ["string", "null"] },
+              "task_started_at": { "type": ["number", "null"] },
+              "node": { "type": ["string", "null"] }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "batch": {
+      "type": "object",
+      "required": ["v", "batch"],
+      "properties": {
+        "v": { "type": "integer", "minimum": 1 },
+        "batch": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/event" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "resync": {
+      "type": "object",
+      "required": ["v", "type", "resync", "epoch", "seq"],
+      "properties": {
+        "v": { "type": "integer", "minimum": 1 },
+        "type": { "const": "resync" },
+        "resync": { "enum": ["replay", "snapshot"] },
+        "epoch": { "type": "string" },
+        "seq": { "type": "integer", "minimum": 0 },
+        "server_ts": { "type": "number" }
+      },
+      "additionalProperties": false
+    },
+    "event": {
+      "type": "object",
+      "required": ["v", "type", "ts"],
+      "properties": {
+        "v": { "type": "integer", "minimum": 1 },
+        "seq": { "type": "integer", "minimum": 1 },
+        "type": {
+          "enum": [
+            "task_start", "hop", "node_start", "node_end",
+            "task_end", "task_error", "graph_update", "snapshot", "pong"
+          ]
+        },
+        "task_id": { "type": "string", "maxLength": 64 },
+        "task_text": { "type": "string", "maxLength": 100 },
+        "task_started_at": { "type": ["number", "null"] },
+        "from": { "type": "string", "maxLength": 200 },
+        "to": { "type": "string", "maxLength": 200 },
+        "node": { "type": "string", "maxLength": 200 },
+        "reason": { "enum": ["done", "error", "stale", "orphaned"] },
+        "error": { "type": "string", "maxLength": 220 },
+        "duration_ms": { "type": "number", "minimum": 0 },
+        "ok": { "type": "boolean" },
+        "epoch": { "type": "string" },
+        "graph_hash": { "type": "string" },
+        "server_ts": { "type": "number" },
+        "client_ts": { "type": ["number", "string", "null"] },
+        "ts": { "type": "number" },
+        "tasks": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "type": "object",
+            "required": ["task_id"],
+            "properties": {
+              "task_id": { "type": "string" },
+              "task_text": { "type": ["string", "null"] },
+              "task_started_at": { "type": ["number", "null"] },
+              "node": { "type": ["string", "null"] }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "hop" } } },
+          "then": { "required": ["from", "to"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "task_error" } } },
+          "then": { "required": ["task_id", "error"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "snapshot" } } },
+          "then": { "required": ["epoch", "seq", "tasks"] }
+        }
+      ]
+    }
+  }
+}

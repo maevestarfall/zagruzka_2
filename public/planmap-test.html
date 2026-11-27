@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>План карта</title>
+<style>
+  /* Apple white — тема по умолчанию */
+  :root {
+    --bg: #f5f5f7;
+    --panel: #ffffff;
+    --box: #ffffff;
+    --border: #d2d2d7;
+    --text: #1d1d1f;
+    --muted: #86868b;
+    --accent: #0071e3;
+    --danger: #ff3b30;
+    --shadow: 0 1px 2px rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.08);
+  }
+  html[data-theme="dark"] {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --box: #1d2330;
+    --border: #2c3444;
+    --text: #e6e9ef;
+    --muted: #8b93a5;
+    --accent: #4f8cff;
+    --danger: #e05252;
+    --shadow: 0 4px 14px rgba(0,0,0,.35);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    display: flex; flex-direction: column;
+  }
+  #toolbar {
+    flex: 0 0 auto; z-index: 50;
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    padding: 10px 12px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+  }
+  #toolbar .title {
+    font-weight: 700; margin-right: 6px; white-space: nowrap;
+  }
+  #toolbar button {
+    background: var(--box); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 12px; cursor: pointer; font-size: 13px;
+  }
+  #toolbar button:hover { border-color: var(--accent); }
+  #toolbar button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  #status { color: var(--muted); font-size: 12px; margin-left: auto; white-space: nowrap; }
+  #hint {
+    position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);
+    z-index: 50; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 12px; font-size: 12px; color: var(--muted);
+    pointer-events: none; opacity: 0; transition: opacity .2s;
+  }
+  #hint.show { opacity: 1; }
+  #world {
+    position: relative;
+    width: 6000px; height: 4000px;
+  }
+  #viewport {
+    flex: 1 1 auto; min-height: 0;
+    position: relative;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  #edges { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+  #edges .edge { stroke: var(--muted); stroke-width: 2; fill: none; cursor: pointer; }
+  #edges .edge:hover { stroke: var(--danger); }
+  #edges .edge-hit { stroke: transparent; stroke-width: 14; fill: none; cursor: pointer; }
+  #edges marker path { fill: var(--muted); }
+  .node {
+    position: absolute; width: 220px;
+    background: var(--box);
+    border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: var(--shadow);
+  }
+  .node.link-src { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+  .node .name {
+    width: 100%;
+    background: transparent; color: var(--accent);
+    border: none; outline: none;
+    font-weight: 700; font-size: 13px;
+    padding: 2px 10px 2px;
+    cursor: text;
+  }
+  .node .name::placeholder { color: var(--muted); font-weight: 400; }
+  .node .head {
+    display: flex; align-items: center; gap: 4px; padding-right: 8px;
+  }
+  .node .head .name { flex: 1 1 auto; width: auto; min-width: 0; }
+  .node .chip {
+    flex: 0 0 auto;
+    border: none; border-radius: 6px;
+    font-size: 10px; font-weight: 700;
+    padding: 3px 8px; cursor: pointer; line-height: 1.2;
+  }
+  .node .chip.chip-actions { background: #ff9500; color: #000; }
+  .node .chip.chip-actions.on { box-shadow: 0 0 0 2px rgba(255,149,0,.45); }
+  .node .chip.chip-prompt {
+    background: #e7f3fb; color: #0f6aa8; border: 1px solid #bfe0f5;
+  }
+  .node .chip.chip-prompt.on { box-shadow: 0 0 0 2px rgba(15,106,168,.35); }
+  html[data-theme="dark"] .node .chip.chip-prompt {
+    background: #12303f; color: #6cc0f5; border-color: #1e4f66;
+  }
+  .node .body-wrap { position: relative; }
+  .node .body {
+    width: 100%; min-height: 70px; resize: vertical; display: block;
+    background: transparent; color: var(--text);
+    border: none; border-top: 1px dashed var(--border); outline: none;
+    font: 13px/1.4 inherit; padding: 8px 10px;
+  }
+  .node .body::placeholder { color: var(--muted); }
+  /* «Действия» — оранжевая область, режет текст квадрата пополам */
+  .node .actions-area {
+    display: none;
+    position: absolute; left: 6px; right: 6px;
+    top: 50%; transform: translateY(-50%); z-index: 5;
+    background: #ff9500; color: #000;
+    border-radius: 8px; padding: 4px 8px 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.25);
+  }
+  .node .actions-area.show { display: block; }
+  .node .actions-area .area-label {
+    font-size: 10px; font-weight: 700; color: #000; opacity: .75;
+  }
+  .node .actions-area textarea {
+    width: 100%; min-height: 44px; resize: vertical; display: block;
+    background: transparent; color: #000;
+    border: none; outline: none;
+    font: 12px/1.4 inherit;
+  }
+  .node .actions-area textarea::placeholder { color: rgba(0,0,0,.5); }
+  /* «Промт» — голубой код-блок как в Telegram Desktop (```…```) */
+  .node .prompt-area {
+    display: none;
+    position: relative; margin: 6px;
+    background: #eaf4fb; border: 1px solid #bfe0f5; border-radius: 8px;
+  }
+  .node .prompt-area.show { display: block; }
+  .node .prompt-area textarea {
+    width: 100%; min-height: 56px; resize: vertical; display: block;
+    background: transparent; color: #0b3a5c;
+    border: none; outline: none;
+    font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    padding: 24px 8px 8px;
+  }
+  .node .prompt-area textarea::placeholder { color: #7fb2d6; }
+  .node .prompt-area .copy {
+    position: absolute; top: 4px; right: 4px; z-index: 2;
+    background: #ffffff; color: #0f6aa8;
+    border: 1px solid #bfe0f5; border-radius: 6px;
+    font-size: 10px; padding: 2px 7px; cursor: pointer;
+  }
+  .node .prompt-area .copy:hover { border-color: #0f6aa8; }
+  html[data-theme="dark"] .node .prompt-area {
+    background: #101c26; border-color: #1e4f66;
+  }
+  html[data-theme="dark"] .node .prompt-area textarea { color: #a8d7f5; }
+  html[data-theme="dark"] .node .prompt-area textarea::placeholder { color: #3f6d8c; }
+  html[data-theme="dark"] .node .prompt-area .copy {
+    background: #0f1115; color: #6cc0f5; border-color: #1e4f66;
+  }
+  .node .del {
+    position: absolute; top: -9px; right: -9px;
+    width: 20px; height: 20px; line-height: 18px;
+    background: var(--danger); color: #fff;
+    border: none; border-radius: 50%;
+    font-size: 12px; cursor: pointer; display: none;
+  }
+  .node:hover .del { display: block; }
+  .node .grip {
+    display: flex; align-items: center; justify-content: center;
+    height: 18px; color: var(--muted); font-size: 10px;
+    letter-spacing: 3px; cursor: grab;
+    touch-action: none; user-select: none; -webkit-user-select: none;
+  }
+  .node .grip:active { cursor: grabbing; }
+</style>
+</head>
+<body>
+  <div id="toolbar">
+    <span class="title">🗺 План карта</span>
+    <button id="btn-add">➕ Квадрат</button>
+    <button id="btn-link">➡️ Стрелка</button>
+    <button id="btn-save">💾 Сохранить</button>
+    <button id="btn-theme" title="Переключить тему">🌙 Тёмная</button>
+    <span id="status">загрузка…</span>
+  </div>
+  <div id="viewport">
+    <div id="world">
+      <svg id="edges">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5"
+                  markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#8b93a5"></path>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+  </div>
+  <div id="hint"></div>
+
+<script>
+(function(){
+  var PLAN = {"title":"План карта","nodes":[
+    {"id":"n1","name":"Шаг 1","text":"Сначала сделать это, потом проверить результат и перейти дальше по плану.",
+     "actions":"Открыть настройки и включить режим","prompt":"Напиши план на неделю по шагам",
+     "show_actions":true,"show_prompt":true,"x":80,"y":60},
+    {"id":"n2","name":"Шаг 2","text":"Второй шаг алгоритма.","actions":"","prompt":"",
+     "show_actions":false,"show_prompt":false,"x":460,"y":140}
+  ],"edges":[{"from":"n1","to":"n2"}]};
+  var orig = window.fetch;
+  window.fetch = function(url, opts){
+    if (String(url).indexOf("/data") !== -1) {
+      if (opts && opts.method === "POST") {
+        return Promise.resolve(new Response('{"ok":true}', {status:200, headers:{"Content-Type":"application/json"}}));
+      }
+      return Promise.resolve(new Response(JSON.stringify(PLAN), {status:200, headers:{"Content-Type":"application/json"}}));
+    }
+    return orig.apply(window, arguments);
+  };
+})();
+</script>
+<script>
+(function () {
+  "use strict";
+
+  // Token is the path segment right after /planmap/.
+  var m = location.pathname.match(/\/planmap\/([^/]+)/);
+  var base = m ? "/planmap/" + m[1] : "";
+
+  var plan = { title: "План карта", nodes: [], edges: [] };
+  var world = document.getElementById("world");
+  var svg = document.getElementById("edges");
+  var statusEl = document.getElementById("status");
+  var hintEl = document.getElementById("hint");
+  var btnLink = document.getElementById("btn-link");
+
+  var linkMode = false;
+  var linkSrc = null;   // node id chosen as arrow source
+  var dirty = false;
+  var saveTimer = null;
+
+  function setStatus(t) { statusEl.textContent = t; }
+  function showHint(t) {
+    hintEl.textContent = t;
+    hintEl.classList.add("show");
+    clearTimeout(showHint._t);
+    showHint._t = setTimeout(function () { hintEl.classList.remove("show"); }, 2500);
+  }
+  function uid() { return "n" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function findNode(id) {
+    for (var i = 0; i < plan.nodes.length; i++) if (plan.nodes[i].id === id) return plan.nodes[i];
+    return null;
+  }
+
+  // --- persistence -------------------------------------------------------
+  function markDirty() {
+    dirty = true;
+    setStatus("несохранённые изменения…");
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(save, 1200); // autosave
+  }
+
+  function save() {
+    if (!dirty) return;
+    setStatus("сохраняю…");
+    fetch(base + "/data", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(plan)
+    }).then(function (r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      dirty = false;
+      setStatus("сохранено ✓");
+    }).catch(function (e) {
+      setStatus("ошибка сохранения: " + e.message);
+    });
+  }
+
+  function load() {
+    fetch(base + "/data").then(function (r) {
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    }).then(function (data) {
+      plan = { title: data.title || "План карта", nodes: data.nodes || [], edges: data.edges || [] };
+      renderAll();
+      setStatus(plan.nodes.length ? "загружено ✓" : "пусто — добавь квадрат");
+    }).catch(function (e) {
+      setStatus("ошибка загрузки: " + e.message);
+    });
+  }
+
+  // --- edges (SVG arrows) --------------------------------------------------
+  function nodeEl(id) { return world.querySelector('.node[data-id="' + id + '"]'); }
+
+  function edgeAnchor(el) {
+    return {
+      x: el.offsetLeft + el.offsetWidth / 2,
+      y: el.offsetTop + el.offsetHeight / 2,
+      w: el.offsetWidth,
+      h: el.offsetHeight
+    };
+  }
+
+  // Point on the border of the box towards the other box's center.
+  function borderPoint(a, b) {
+    var dx = b.x - a.x, dy = b.y - a.y;
+    if (dx === 0 && dy === 0) return { x: a.x, y: a.y };
+    var sx = (a.w / 2) / Math.abs(dx || 1e-6);
+    var sy = (a.h / 2) / Math.abs(dy || 1e-6);
+    var s = Math.min(sx, sy);
+    return { x: a.x + dx * s, y: a.y + dy * s };
+  }
+
+  function renderEdges() {
+    // Remove old paths (keep <defs>).
+    Array.prototype.slice.call(svg.querySelectorAll("path.edge, path.edge-hit"))
+      .forEach(function (p) { p.remove(); });
+    plan.edges.forEach(function (e, idx) {
+      var elA = nodeEl(e.from), elB = nodeEl(e.to);
+      if (!elA || !elB) return;
+      var a = edgeAnchor(elA), b = edgeAnchor(elB);
+      var p1 = borderPoint(a, b), p2 = borderPoint(b, a);
+      var mx = (p1.x + p2.x) / 2, my = (p1.y + p2.y) / 2;
+      var d = "M " + p1.x + " " + p1.y + " Q " + mx + " " + my + " " + p2.x + " " + p2.y;
+
+      var hit = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      hit.setAttribute("d", d);
+      hit.setAttribute("class", "edge-hit");
+      hit.addEventListener("click", function () { removeEdge(idx); });
+      svg.appendChild(hit);
+
+      var path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", d);
+      path.setAttribute("class", "edge");
+      path.setAttribute("marker-end", "url(#arrow)");
+      path.addEventListener("click", function () { removeEdge(idx); });
+      svg.appendChild(path);
+    });
+  }
+
+  function removeEdge(idx) {
+    if (!confirm("Удалить стрелку?")) return;
+    plan.edges.splice(idx, 1);
+    renderEdges();
+    markDirty();
+  }
+
+  // --- nodes ---------------------------------------------------------------
+  function renderNode(n) {
+    var el = document.createElement("div");
+    el.className = "node";
+    el.dataset.id = n.id;
+    el.style.left = n.x + "px";
+    el.style.top = n.y + "px";
+
+    var grip = document.createElement("div");
+    grip.className = "grip";
+    grip.textContent = "⋮⋮⋮";
+    grip.title = "Тяни, чтобы переместить";
+
+    var head = document.createElement("div");
+    head.className = "head";
+
+    var name = document.createElement("input");
+    name.className = "name";
+    name.placeholder = "Название…";
+    name.value = n.name || "";
+    name.addEventListener("input", function () { n.name = name.value; markDirty(); });
+
+    // «Действия» — оранжевая кнопка-ярлык справа сверху от текста.
+    var btnActions = document.createElement("button");
+    btnActions.className = "chip chip-actions";
+    btnActions.type = "button";
+    btnActions.textContent = "действия";
+    btnActions.title = "Показать/скрыть область действий";
+
+    // «Промт» — голубая кнопка рядом.
+    var btnPrompt = document.createElement("button");
+    btnPrompt.className = "chip chip-prompt";
+    btnPrompt.type = "button";
+    btnPrompt.textContent = "промт";
+    btnPrompt.title = "Показать/скрыть блок промта";
+
+    head.appendChild(name);
+    head.appendChild(btnActions);
+    head.appendChild(btnPrompt);
+
+    var bodyWrap = document.createElement("div");
+    bodyWrap.className = "body-wrap";
+
+    var body = document.createElement("textarea");
+    body.className = "body";
+    body.placeholder = "Текст действия…";
+    body.value = n.text || "";
+    body.addEventListener("input", function () { n.text = body.value; markDirty(); });
+
+    // Оранжевая область поверх текста (режет его пополам).
+    var actionsArea = document.createElement("div");
+    actionsArea.className = "actions-area";
+    var actionsLabel = document.createElement("div");
+    actionsLabel.className = "area-label";
+    actionsLabel.textContent = "ДЕЙСТВИЯ";
+    var actionsTa = document.createElement("textarea");
+    actionsTa.placeholder = "Что делать…";
+    actionsTa.value = n.actions || "";
+    actionsTa.addEventListener("input", function () { n.actions = actionsTa.value; markDirty(); });
+    actionsArea.appendChild(actionsLabel);
+    actionsArea.appendChild(actionsTa);
+
+    bodyWrap.appendChild(body);
+    bodyWrap.appendChild(actionsArea);
+
+    // Голубой код-блок промта с кнопкой «копировать» сверху справа.
+    var promptArea = document.createElement("div");
+    promptArea.className = "prompt-area";
+    var copyBtn = document.createElement("button");
+    copyBtn.className = "copy";
+    copyBtn.type = "button";
+    copyBtn.textContent = "копировать";
+    copyBtn.title = "Скопировать промт";
+    copyBtn.addEventListener("click", function (ev) {
+      ev.stopPropagation(); // не задевать режим стрелок
+      var txt = promptTa.value || "";
+      function done() {
+        copyBtn.textContent = "скопировано ✓";
+        setTimeout(function () { copyBtn.textContent = "копировать"; }, 1500);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt).then(done).catch(function () {
+          promptTa.select();
+          document.execCommand("copy");
+          done();
+        });
+      } else {
+        promptTa.select();
+        document.execCommand("copy");
+        done();
+      }
+    });
+    var promptTa = document.createElement("textarea");
+    promptTa.placeholder = "Текст промта…";
+    promptTa.value = n.prompt || "";
+    promptTa.addEventListener("input", function () { n.prompt = promptTa.value; markDirty(); });
+    promptArea.appendChild(copyBtn);
+    promptArea.appendChild(promptTa);
+
+    function syncPanels() {
+      actionsArea.classList.toggle("show", !!n.show_actions);
+      btnActions.classList.toggle("on", !!n.show_actions);
+      promptArea.classList.toggle("show", !!n.show_prompt);
+      btnPrompt.classList.toggle("on", !!n.show_prompt);
+      renderEdges();
+    }
+    btnActions.addEventListener("click", function (ev) {
+      ev.stopPropagation();
+      n.show_actions = !n.show_actions;
+      syncPanels();
+      markDirty();
+    });
+    btnPrompt.addEventListener("click", function (ev) {
+      ev.stopPropagation();
+      n.show_prompt = !n.show_prompt;
+      syncPanels();
+      markDirty();
+    });
+
+    var del = document.createElement("button");
+    del.className = "del";
+    del.textContent = "✕";
+    del.title = "Удалить квадрат";
+    del.addEventListener("click", function (ev) {
+      ev.stopPropagation();
+      if (!confirm("Удалить квадрат «" + (n.name || "без названия") + "»?")) return;
+      plan.nodes = plan.nodes.filter(function (x) { return x.id !== n.id; });
+      plan.edges = plan.edges.filter(function (e) { return e.from !== n.id && e.to !== n.id; });
+      el.remove();
+      renderEdges();
+      markDirty();
+    });
+
+    el.appendChild(grip);
+    el.appendChild(head);
+    el.appendChild(bodyWrap);
+    el.appendChild(promptArea);
+    el.appendChild(del);
+    // Начальное состояние панелей (после вставки в DOM не обязательно,
+    // но renderEdges внутри syncPanels безопасен и после appendChild ниже).
+    actionsArea.classList.toggle("show", !!n.show_actions);
+    btnActions.classList.toggle("on", !!n.show_actions);
+    promptArea.classList.toggle("show", !!n.show_prompt);
+    btnPrompt.classList.toggle("on", !!n.show_prompt);
+
+    // Drag by the grip row (mouse + touch via pointer events) so typing
+    // in the name/text fields never fights with dragging.
+    var drag = null;
+    grip.addEventListener("pointerdown", function (ev) {
+      if (linkMode) return; // in link mode a tap selects, not drags
+      ev.preventDefault();
+      drag = { px: ev.clientX, py: ev.clientY, x: n.x, y: n.y, moved: false };
+      grip.setPointerCapture(ev.pointerId);
+    });
+    grip.addEventListener("pointermove", function (ev) {
+      if (!drag) return;
+      var dx = ev.clientX - drag.px, dy = ev.clientY - drag.py;
+      if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true;
+      if (!drag.moved) return;
+      n.x = Math.max(0, drag.x + dx);
+      n.y = Math.max(0, drag.y + dy);
+      el.style.left = n.x + "px";
+      el.style.top = n.y + "px";
+      renderEdges();
+    });
+    grip.addEventListener("pointerup", function () {
+      if (drag && drag.moved) markDirty();
+      drag = null;
+    });
+    grip.addEventListener("pointercancel", function () {
+      // Touch got interrupted (scroll, incoming call…) — don't leave a
+      // stuck drag; keep whatever position the box reached.
+      if (drag && drag.moved) markDirty();
+      drag = null;
+    });
+
+    // Arrows anchor to box centers — keep them glued when the textarea
+    // is resized vertically (resize: vertical) or content reflows.
+    if (window.ResizeObserver) {
+      new ResizeObserver(function () { renderEdges(); }).observe(el);
+    }
+
+    // Link mode: click a box to pick source, then another to draw the arrow.
+    el.addEventListener("click", function () {
+      if (!linkMode) return;
+      if (!linkSrc) {
+        linkSrc = n.id;
+        el.classList.add("link-src");
+        showHint("Теперь нажми на квадрат-цель — туда пойдёт стрелка");
+        return;
+      }
+      if (linkSrc === n.id) {
+        el.classList.remove("link-src");
+        linkSrc = null;
+        showHint("Выбор источника сброшен");
+        return;
+      }
+      var dup = plan.edges.some(function (e) { return e.from === linkSrc && e.to === n.id; });
+      if (!dup) {
+        plan.edges.push({ from: linkSrc, to: n.id });
+        renderEdges();
+        markDirty();
+        showHint("Стрелка добавлена. Клик по стрелке — удалить её");
+      } else {
+        showHint("Такая стрелка уже есть");
+      }
+      var src = nodeEl(linkSrc);
+      if (src) src.classList.remove("link-src");
+      linkSrc = null;
+    });
+
+    world.appendChild(el);
+  }
+
+  function renderAll() {
+    Array.prototype.slice.call(world.querySelectorAll(".node"))
+      .forEach(function (el) { el.remove(); });
+    plan.nodes.forEach(renderNode);
+    renderEdges();
+  }
+
+  // --- toolbar --------------------------------------------------------------
+  document.getElementById("btn-add").addEventListener("click", function () {
+    var vp = document.getElementById("viewport");
+    var n = {
+      id: uid(),
+      name: "",
+      text: "",
+      // Cascade in a grid so new boxes never bury each other
+      // (boxes are 220px wide — the old 40px shift stacked them).
+      x: vp.scrollLeft + 60 + (plan.nodes.length % 4) * 250,
+      y: vp.scrollTop + 60 + (Math.floor(plan.nodes.length / 4) % 6) * 180
+    };
+    plan.nodes.push(n);
+    renderNode(n);
+    markDirty();
+    showHint("Название пиши сверху квадрата, текст — внутри. Тяни за полоску ⋮⋮⋮");
+  });
+
+  btnLink.addEventListener("click", function () {
+    linkMode = !linkMode;
+    btnLink.classList.toggle("active", linkMode);
+    if (linkSrc) {
+      var src = nodeEl(linkSrc);
+      if (src) src.classList.remove("link-src");
+      linkSrc = null;
+    }
+    showHint(linkMode
+      ? "Режим стрелок: нажми квадрат-источник, потом квадрат-цель"
+      : "Режим стрелок выключен");
+  });
+
+  document.getElementById("btn-save").addEventListener("click", function () {
+    dirty = true;
+    save();
+  });
+
+  // --- theme (Apple white by default, dark optional) ------------------------
+  var btnTheme = document.getElementById("btn-theme");
+  function applyTheme(theme) {
+    if (theme === "dark") {
+      document.documentElement.setAttribute("data-theme", "dark");
+      btnTheme.textContent = "☀️ Светлая";
+    } else {
+      document.documentElement.removeAttribute("data-theme");
+      btnTheme.textContent = "🌙 Тёмная";
+    }
+  }
+  var savedTheme = "light";
+  try { savedTheme = localStorage.getItem("planmap-theme") || "light"; } catch (e) { /* приватный режим */ }
+  applyTheme(savedTheme);
+  btnTheme.addEventListener("click", function () {
+    savedTheme = savedTheme === "dark" ? "light" : "dark";
+    try { localStorage.setItem("planmap-theme", savedTheme); } catch (e) { /* приватный режим */ }
+    applyTheme(savedTheme);
+  });
+
+  window.addEventListener("beforeunload", function () {
+    if (!dirty) return;
+    // fetch() may be cancelled during unload — sendBeacon survives it.
+    try {
+      var blob = new Blob([JSON.stringify(plan)], { type: "application/json" });
+      if (navigator.sendBeacon && navigator.sendBeacon(base + "/data", blob)) {
+        dirty = false;
+        return;
+      }
+    } catch (e) { /* fall through to best-effort fetch */ }
+    try { save(); } catch (e) { /* best effort */ }
+  });
+
+  load();
+})();
+</script>
+</body>
+</html>

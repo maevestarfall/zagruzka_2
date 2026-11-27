@@ -1,0 +1,60 @@
+aiogram==3.13.1
+aiohttp==3.10.10
+aiocryptopay>=0.3,<1
+aiosqlite>=0.20,<0.22
+openai>=1.55.0,<3
+httpx>=0.27,<0.29
+python-dotenv==1.0.1
+yt-dlp>=2026.3.0
+faster-whisper>=1.2,<2
+scenedetect>=0.7,<1
+pytrends>=4.9,<5
+# ---- Helpzavr addon (screenshot helper from tg_bot+13) -------------------
+pillow>=11.0
+opencv-python-headless>=4.10
+# Pin numpy<2: numpy 2.x ships an ABI break that crashes opencv /
+# faster-whisper / pandas builds compiled against 1.x. The user's
+# original successful Render deploy was on numpy 1.26.
+numpy>=1.26,<2
+pytesseract>=0.3.10
+# ---- Mailbox addon (IMAP poller, originally freelance-mailbox-mcp) -------
+imap-tools>=1.7.4
+# ---- RAM guard (💻 RAM settings screen) ----------------------------------
+psutil>=5.9,<8
+# ---- 🔊 Голосовой ответчик (on-device Supertonic TTS) --------------
+# Bundles ONNX runtime + soundfile under the hood; first call downloads
+# the model from HuggingFace (cached in $HF_HOME between deploys).
+supertonic>=1.3,<2
+# huggingface_hub 1.0 (Oct 2025) broke a bunch of APIs faster-whisper
+# still uses. Pin <1 so the resolver doesn't silently pull the new
+# major and crash on import inside Render's 512MB free container.
+huggingface_hub>=0.21,<1
+# pandas 3.x (early 2026) and the bleeding-edge numpy/pydantic combos
+# pip resolves to today blow the 512MB budget at import time. Keep
+# the proven 2.x line.
+pandas==2.2.3
+
+# Slack connector addon (bot/addons/slack)
+slack_sdk>=3.27,<4
+
+# ---- Мультиплатформенный шлюз (ТЗ-1, этапы 2-3) --------------------------
+# Discord-адаптер (bot/gateway/adapters/discord_gw.py). Импорт ленивый:
+# без библиотеки бот стартует, адаптер честно показывает ошибку (A10).
+# VK-адаптер работает на голом aiohttp — отдельная библиотека не нужна.
+discord.py>=2.4,<3
+
+# ---- Персональные данные и синхронизация (ЧАСТЬ 18.3) ---------------------
+# PostgreSQL-адаптер (bot/addons/masterroom/sync/db.py). Импорт ЛЕНИВЫЙ:
+# без DATABASE_URL asyncpg не загружается при старте (бюджет 512MB Render).
+# S3-адаптер работает на голом aiohttp + SigV4 — boto3 НЕ нужен.
+asyncpg>=0.29,<0.31
+
+# ---- Защита учётных данных (ЧАСТЬ 18.4) -----------------------------------
+# Криптомодуль bot/addons/masterroom/sync/crypto.py. Импорт ЛЕНИВЫЙ
+# (правило 18.3 §1): без SYNC_MASTER_KEY библиотеки не загружаются при
+# старте (бюджет 512MB Render). Только штатные примитивы — никакой
+# самодельной криптографии и никаких pure-python реализаций.
+# cryptography: AEAD AES-256-GCM для envelope encryption (manylinux wheel).
+# argon2-cffi: argon2id-хеши паролей (cffi-биндинг референсной реализации).
+cryptography>=43,<47
+argon2-cffi>=23.1,<26

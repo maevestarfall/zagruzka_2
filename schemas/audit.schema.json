@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AuditorArtifact",
+  "type": "object",
+  "properties": {
+    "task_id": { "type": "string" },
+    "verdict": { "type": "string", "enum": ["PASS", "FAIL"] },
+    "safety_checks": { "type": "boolean" }
+  },
+  "required": ["task_id", "verdict", "safety_checks"]
+}

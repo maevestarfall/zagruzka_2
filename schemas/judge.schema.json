@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "JudgeRuling",
+  "type": "object",
+  "properties": {
+    "run_id": { "type": "string" },
+    "dispute_desc": { "type": "string" },
+    "verdict": { "type": "string" }
+  },
+  "required": ["run_id", "dispute_desc", "verdict"]
+}

@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ReviewerArtifact",
+  "type": "object",
+  "properties": {
+    "task_id": { "type": "string" },
+    "score": { "type": "number", "minimum": 1.0, "maximum": 10.0 },
+    "verdict": { "type": "string", "enum": ["PASS", "FAIL"] }
+  },
+  "required": ["task_id", "score", "verdict"]
+}

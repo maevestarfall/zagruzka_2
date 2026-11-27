@@ -1,0 +1,48 @@
+# render.yaml — Blueprint для Render.com
+# Основано на https://github.com/charlottedonovanx/112 (2026-06-01)
+# Документация: https://render.com/docs/blueprint-spec
+#
+# Деплой:
+#   1. Push этот репо на GitHub
+#   2. https://dashboard.render.com → New + → Blueprint → подключи репо
+#   3. Render запросит переменные (TELEGRAM_BOT_TOKEN и др.)
+#   4. Apply → Render соберет Docker-образ (~2-3 мин) и запустит сервис
+#   5. Проверь логи: должна быть строка "🤖 Telegram бот запущен"
+#
+# Free-tier особенности:
+#   - Сервис засыпает после 15 мин бездействия
+#   - Бот и API работают в одном контейнере (server.mjs автоматически запускает bot.mjs)
+#   - Background Workers не поддерживаются — используем Web Service
+
+services:
+  - type: web
+    name: ai-tool-inspector
+    runtime: docker               # используем Docker (как в charlottedonovanx/112)
+    dockerfilePath: ./Dockerfile
+    plan: free
+    autoDeploy: true              # авто-деплой при push в main
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: SERVICE_NAME
+        value: render-main
+      - key: SERVICE_URL
+        fromService:
+          type: web
+          name: ai-tool-inspector
+          property: host
+      # ── Telegram Bot (обязательно) ────────────────────────────────────
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false               # paste в Dashboard (от @BotFather)
+      - key: TELEGRAM_CHAT_ID
+        sync: false               # опционально (получи через /start → getUpdates)
+      # ── AI API Keys (опционально, для чата в боте) ────────────────────
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false

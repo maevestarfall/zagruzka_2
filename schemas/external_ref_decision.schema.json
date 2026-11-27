@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ExternalRefDecision",
+  "type": "object",
+  "properties": {
+    "ref_url": { "type": "string" },
+    "integration_mode": { "type": "string", "enum": ["pattern-only", "wrap-as-tool", "vendored-deps"] },
+    "applies_to_cluster": { "type": "string" }
+  },
+  "required": ["ref_url", "integration_mode", "applies_to_cluster"]
+}
