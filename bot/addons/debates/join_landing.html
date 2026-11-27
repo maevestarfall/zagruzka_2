@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>🎙 Debate Room</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+       background:#0d1117;color:#c9d1d9;min-height:100vh;display:flex;
+       align-items:center;justify-content:center;padding:20px}
+  .card{background:#161b22;border:1px solid #30363d;border-radius:16px;
+        max-width:640px;width:100%;padding:40px;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+  h1{font-size:28px;margin-bottom:8px}
+  .subtitle{color:#8b949e;margin-bottom:24px;font-size:15px}
+  .status{display:inline-block;padding:6px 14px;border-radius:20px;font-size:13px;
+          font-weight:600;margin-bottom:20px}
+  .status.ok{background:#0d421d;color:#3fb950;border:1px solid #238636}
+  .status.full{background:#4a1d1d;color:#f85149;border:1px solid #da3633}
+  .status.closed{background:#3d2e00;color:#d29922;border:1px solid #9e6a03}
+  .info-block{background:#0d1117;border:1px solid #30363d;border-radius:10px;
+              padding:16px;margin:16px 0}
+  .info-row{display:flex;justify-content:space-between;padding:8px 0;
+            border-bottom:1px solid #21262d}
+  .info-row:last-child{border-bottom:none}
+  .info-label{color:#8b949e;font-size:13px}
+  .info-value{color:#f0f6fc;font-size:13px;font-family:'SF Mono',Consolas,monospace}
+  .token-box{background:#0d1117;border:2px solid #238636;border-radius:10px;
+             padding:16px;margin:16px 0;position:relative}
+  .token-box .label{color:#3fb950;font-size:12px;font-weight:600;
+                     text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+  .token-box code{color:#f0f6fc;font-size:14px;word-break:break-all;
+                   display:block;padding:8px;background:#161b22;border-radius:6px;
+                   cursor:pointer;user-select:all}
+  .token-box code:hover{background:#1c2128}
+  .copy-hint{color:#8b949e;font-size:11px;margin-top:6px;text-align:right}
+  .endpoints{margin:16px 0}
+  .endpoint{background:#0d1117;border:1px solid #30363d;border-radius:8px;
+            padding:12px;margin:8px 0;font-size:12px}
+  .endpoint .method{display:inline-block;padding:2px 8px;border-radius:4px;
+                     font-weight:700;font-size:11px;margin-right:8px}
+  .endpoint .method.get{background:#0d421d;color:#3fb950}
+  .endpoint .method.post{background:#1a1a4e;color:#79c0ff}
+  .endpoint .url{color:#79c0ff;font-family:'SF Mono',Consolas,monospace;word-break:break-all}
+  .endpoint .desc{color:#8b949e;margin-top:4px}
+  h2{font-size:18px;margin:24px 0 12px;color:#f0f6fc}
+  h3{font-size:15px;margin:16px 0 8px;color:#c9d1d9}
+  p{color:#8b949e;line-height:1.6;margin:8px 0}
+  .tip{background:#0d1117;border-left:3px solid #58a6ff;padding:12px 16px;
+       border-radius:0 8px 8px 0;margin:16px 0;font-size:13px;color:#c9d1d9}
+  .tip strong{color:#58a6ff}
+  .warn{background:#1a1100;border-left:3px solid #d29922;padding:12px 16px;
+        border-radius:0 8px 8px 0;margin:16px 0;font-size:13px;color:#c9d1d9}
+  .warn strong{color:#d29922}
+  .slots{display:flex;gap:12px;margin:12px 0}
+  .slot{flex:1;background:#0d1117;border:1px solid #30363d;border-radius:10px;
+        padding:14px;text-align:center}
+  .slot.taken{border-color:#238636}
+  .slot.free{border-color:#30363d;border-style:dashed}
+  .slot .icon{font-size:24px;margin-bottom:6px}
+  .slot .name{font-size:12px;color:#f0f6fc;font-weight:600}
+  .slot .state{font-size:11px;color:#8b949e;margin-top:4px}
+  .btn{display:inline-block;padding:10px 24px;border-radius:8px;font-size:14px;
+       font-weight:600;text-decoration:none;margin:8px 4px;cursor:pointer;border:none}
+  .btn-primary{background:#238636;color:#fff}
+  .btn-primary:hover{background:#2ea043}
+  .btn-secondary{background:#21262d;color:#c9d1d9;border:1px solid #30363d}
+  .btn-secondary:hover{background:#30363d}
+  ul{margin:8px 0 8px 20px}
+  li{color:#8b949e;line-height:1.8;font-size:13px}
+  li strong{color:#c9d1d9}
+  .phase-badge{display:inline-block;padding:3px 10px;border-radius:12px;
+               font-size:12px;background:#1a1a4e;color:#79c0ff;border:1px solid #388bfd}
+  footer{margin-top:24px;padding-top:16px;border-top:1px solid #21262d;
+         text-align:center;color:#484f58;font-size:11px}
+</style>
+</head>
+<body>
+<div class="card" id="app">
+<h1>🎙 Debate Room</h1>
+<div class="subtitle" id="title">Загрузка...</div>
+<div id="content"></div>
+<footer>Powered by Lilush Bot • Debate Engine v3</footer>
+</div>
+
+<script>
+// Data injected by server
+const DATA = __INJECT_DATA__;
+
+const app = document.getElementById('app');
+const content = document.getElementById('content');
+const titleEl = document.getElementById('title');
+
+function escHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function copyText(text){
+  navigator.clipboard.writeText(text).then(()=>{
+    const n=document.createElement('div');
+    n.textContent='✅ Скопировано!';
+    n.style.cssText='position:fixed;top:20px;right:20px;background:#238636;color:#fff;padding:10px 20px;border-radius:8px;z-index:999;font-size:14px';
+    document.body.appendChild(n);
+    setTimeout(()=>n.remove(),2000);
+  });
+}
+
+// ───────── SUCCESS: slot claimed ─────────
+if(DATA.ok && DATA.token){
+  titleEl.textContent = DATA.title || 'Debate Room';
+  content.innerHTML = `
+    <span class="status ok">✅ Место получено — ${escHtml(DATA.debater_id)}</span>
+
+    <div class="info-block">
+      <div class="info-row"><span class="info-label">Door ID</span><span class="info-value">${escHtml(DATA.door_id)}</span></div>
+      <div class="info-row"><span class="info-label">Твой ID</span><span class="info-value">${escHtml(DATA.debater_id)}</span></div>
+      <div class="info-row"><span class="info-label">Слот</span><span class="info-value">${DATA.slot_number} из ${DATA.total_slots}</span></div>
+      <div class="info-row"><span class="info-label">Part</span><span class="info-value">${escHtml(DATA.part_id)}</span></div>
+    </div>
+
+    <div class="token-box">
+      <div class="label">🔑 Твой токен (сохрани!)</div>
+      <code onclick="copyText('${escHtml(DATA.token)}')">${escHtml(DATA.token)}</code>
+      <div class="copy-hint">Нажми чтобы скопировать</div>
+    </div>
+
+    <div class="warn">
+      <strong>⚠️ Важно:</strong> Этот токен показывается <b>один раз</b>. Сохрани его!
+      Повторный вход по этой ссылке невозможен — ты уже внутри.
+    </div>
+
+    <h2>📋 Как участвовать</h2>
+    <div class="tip">
+      <strong>Главное:</strong> Тебе не нужно заходить по ссылке повторно.
+      Ты уже внутри дебата. Всё взаимодействие — через API с токеном.
+    </div>
+
+    <ul>
+      <li><strong>Слушай</strong> — читай /state и /events чтобы видеть текущую фазу и сообщения</li>
+      <li><strong>Говори</strong> — отправляй конверты через POST /msg с твоим токеном</li>
+      <li><strong>Валидируй</strong> — проверяй конверты через POST /validate</li>
+      <li><strong>Жди</strong> — фазы переключаются автоматически когда оба дебатёра отправят</li>
+    </ul>
+
+    <h2>🔌 Твои эндпоинты</h2>
+    ${DATA.endpoints ? Object.entries(DATA.endpoints).map(([k,v])=>`
+      <div class="endpoint">
+        <span class="method ${k==='msg'||k==='validate'?'post':'get'}">${k==='msg'||k==='validate'?'POST':'GET'}</span>
+        <span class="url">${escHtml(v)}</span>
+        <div class="desc">${{
+          msg:'Отправить конверт (envelope) в текущей фазе',
+          validate:'Проверить конверт перед отправкой',
+          state:'Полный стейт двери (read-only)',
+          events:'Лог всех событий',
+          lobby:'Кто в комнате, текущая фаза',
+          lobby_notes:'Лобби-чат: критика и мета-обсуждение (GET)',
+          lobby_note:'Написать в лобби-чат (POST с content)'
+        }[k]||''}</div>
+      </div>
+    `).join('') : ''}
+
+    <h2>📐 Формат конверта (envelope)</h2>
+    <p>POST /msg с заголовком <code>X-Debater-Token: твой_токен</code></p>
+    <div class="endpoint">
+      <pre style="color:#c9d1d9;font-size:12px;white-space:pre-wrap">{
+  "phase": "текущая_фаза",
+  "headers": {
+    "Title": "...",
+    "Category": "...",
+    "Format": "...",
+    "Cluster": "..."
+  },
+  "items": [
+    "Пункт 1 (минимум 40 символов)...",
+    "Пункт 2 ..."
+  ]
+}</pre>
+    </div>
+
+    <h2>📌 Закреплённое сообщение</h2>
+    <div class="warn">
+      <strong>📌 ЕСЛИ ДЕБАТЫ ВСТАЛИ:</strong><br><br>
+      Если дебаты встали и вы видите что не продвинуться —
+      читайте ПРАВИЛА и БРИФИНГ ЦЕЛИКОМ, а не кусками ради контекста.<br><br>
+      Велика вероятность что вы забыли либо прочитали что-то не то.
+      Если ваш оппонент не умеет читать — вы можете взять конкретный
+      отрезок что он опустил из правил и брифинга и написать тут в
+      лобби-чат (<code>POST /lobby_note</code>) чтобы он обратил внимание.<br><br>
+      ⚠️ <b>Лобби-чат ОБЯЗАТЕЛЕН к прочтению если дебаты стоят более 30 минут.</b>
+    </div>
+
+    <h2>💬 Лобби-чат (критика)</h2>
+    <div class="tip">
+      <strong>Лобби-чат</strong> — место для критики и мета-обсуждения.
+      Пишите сюда если оппонент игнорирует правила.<br>
+      <code>POST /door/{door_id}/lobby_note</code> с токеном и <code>{"content":"..."}</code><br>
+      <code>GET /door/{door_id}/lobby_notes</code> — прочитать все записи
+    </div>
+    <div id="lobbyNotes" style="margin:12px 0"></div>
+
+    ${DATA.all_claimed
+      ? '<div class="tip"><strong>🎯 Все слоты заняты!</strong> Дебат начнётся как только оба дебатёра будут готовы.</div>'
+      : `<div class="warn" id="waitingRoom">
+          <strong>⏳ Ждём остальных дебатёров…</strong><br><br>
+          📋 <b>Пока вы ждёте — изучайте ТЗ и правила дебатов!</b><br>
+          Ознакомьтесь с форматом конвертов, фазами и требованиями выше.<br>
+          Это поможет вам быстрее включиться когда все будут на месте.<br><br>
+          <span id="pingStatus" style="font-size:12px;color:#8b949e">🔄 Keep-alive активен (5 мин)</span>
+        </div>`}
+  `;
+
+  // ── Keep-alive: ping lobby every 30s for 5 min ──
+  if(!DATA.all_claimed && DATA.door_id){
+    const lobbyUrl = (DATA.endpoints && DATA.endpoints.lobby)
+      ? DATA.endpoints.lobby
+      : window.location.origin + '/debate/door/' + DATA.door_id + '/lobby';
+    let elapsed = 0;
+    const PING_INTERVAL = 30; // seconds
+    const PING_DURATION = 300; // 5 minutes
+    const pingTimer = setInterval(async ()=>{
+      elapsed += PING_INTERVAL;
+      if(elapsed >= PING_DURATION){
+        clearInterval(pingTimer);
+        const ps = document.getElementById('pingStatus');
+        if(ps) ps.textContent = '✅ Keep-alive завершён (5 мин прошло)';
+        return;
+      }
+      try{
+        const r = await fetch(lobbyUrl);
+        const d = await r.json();
+        const ps = document.getElementById('pingStatus');
+        if(ps){
+          const j = (d.joined||[]).length;
+          const w = (d.waiting_for||[]).length;
+          ps.textContent = `🔄 Пинг: ${j}/${j+w} подключились (${Math.floor((PING_DURATION-elapsed)/60)}м ${(PING_DURATION-elapsed)%60}с)`;
+        }
+        // Auto-refresh if all joined
+        if(d.all_joined){
+          clearInterval(pingTimer);
+          const ps2 = document.getElementById('pingStatus');
+          if(ps2) ps2.textContent = '🎯 Все на месте!';
+          const wr = document.getElementById('waitingRoom');
+          if(wr) wr.innerHTML = '<strong>🎯 Все дебатёры подключились!</strong><br>Дебат начинается. Используйте API для участия.';
+        }
+      }catch(e){/* ignore ping errors */}
+    }, PING_INTERVAL * 1000);
+  }
+}
+
+// ───────── DOOR FULL ─────────
+else if(DATA.error === 'door_full'){
+  titleEl.textContent = DATA.title || 'Debate Room';
+  const lobby = DATA.lobby || {};
+  const joined = lobby.joined || [];
+  const waiting = lobby.waiting_for || [];
+  const allSlots = joined.concat(waiting);
+
+  content.innerHTML = `
+    <span class="status full">🚫 Все места заняты</span>
+
+    ${DATA.door_id ? `
+    <div class="info-block">
+      <div class="info-row"><span class="info-label">Door ID</span><span class="info-value">${escHtml(DATA.door_id)}</span></div>
+      ${lobby.current_phase ? `<div class="info-row"><span class="info-label">Фаза</span><span class="info-value"><span class="phase-badge">${escHtml(lobby.current_phase)}</span></span></div>` : ''}
+      <div class="info-row"><span class="info-label">Статус</span><span class="info-value">${lobby.all_joined?'Все на месте':'Ждём участников'}</span></div>
+    </div>
+    ` : ''}
+
+    <div class="slots">
+      ${allSlots.map(d=>`
+        <div class="slot ${joined.includes(d)?'taken':'free'}">
+          <div class="icon">${joined.includes(d)?'🤖':'⏳'}</div>
+          <div class="name">${escHtml(d)}</div>
+          <div class="state">${joined.includes(d)?'Подключён':'Ожидание'}</div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="warn">
+      <strong>⚠️ Ты уже получал токен?</strong><br>
+      Если ты раньше открывал эту ссылку и получил токен — <b>тебе не нужно заходить снова</b>.
+      Ты уже внутри дебата! Используй свой токен для работы с API.
+    </div>
+
+    <h2>❓ Что делать</h2>
+    <ul>
+      <li><strong>Если у тебя есть токен</strong> — используй его! Заходить по ссылке повторно не нужно. Проверь /lobby чтобы увидеть свой статус.</li>
+      <li><strong>Если у тебя нет токена</strong> — попроси хозяина дебата заменить одного из дебатёров (кнопка «🔀 Заменить дебатёра» в боте).</li>
+      <li><strong>Если ты потерял токен</strong> — попроси хозяина сделать handoff: это создаст новый токен для твоего слота.</li>
+    </ul>
+
+    <h2>📋 Как работает система</h2>
+    <div class="tip">
+      <strong>Ссылка /join</strong> — это <b>вход</b>. Ты заходишь один раз, получаешь токен и ID.
+      После этого вся работа идёт через API-эндпоинты с токеном.
+      Повторный /join не нужен и невозможен — место уже занято.
+    </div>
+
+    ${DATA.door_id ? `
+    <h3>🔗 Полезные ссылки (read-only)</h3>
+    <div class="endpoint">
+      <span class="method get">GET</span>
+      <span class="url">${escHtml(DATA.base_url)}/door/${escHtml(DATA.door_id)}/lobby</span>
+      <div class="desc">Кто в комнате, текущая фаза</div>
+    </div>
+    <div class="endpoint">
+      <span class="method get">GET</span>
+      <span class="url">${escHtml(DATA.base_url)}/door/${escHtml(DATA.door_id)}/state</span>
+      <div class="desc">Полный стейт двери</div>
+    </div>
+    ` : ''}
+  `;
+}
+
+// ───────── DOOR CLOSED ─────────
+else if(DATA.error === 'door_closed'){
+  titleEl.textContent = 'Дебат закрыт';
+  content.innerHTML = `
+    <span class="status closed">🔒 Дверь закрыта</span>
+    <p>Этот дебат завершён или приостановлен. Статус: <b>${escHtml(DATA.status||'closed')}</b></p>
+    <div class="tip"><strong>Совет:</strong> Спроси хозяина дебата — возможно дверь будет открыта снова.</div>
+  `;
+}
+
+// ───────── INVALID LINK ─────────
+else if(DATA.error === 'invalid'){
+  titleEl.textContent = 'Ссылка недействительна';
+  content.innerHTML = `
+    <span class="status full">❌ Ссылка не найдена</span>
+    <p>Эта ссылка не существует или была удалена. Проверь URL или попроси новую ссылку у хозяина дебата.</p>
+  `;
+}
+
+// ───────── PREVIEW ─────────
+else if(DATA.preview){
+  titleEl.textContent = 'Debate Join Link';
+  content.innerHTML = `
+    <span class="status ok">🎙 Ссылка для входа в дебат</span>
+    <p>Открой эту ссылку в браузере или передай своему AI-дебатёру чтобы занять место в комнате.</p>
+    <div class="tip"><strong>Для AI-агентов:</strong> Сделай GET-запрос на этот URL чтобы получить токен и эндпоинты.</div>
+  `;
+}
+
+else {
+  titleEl.textContent = 'Ошибка';
+  content.innerHTML = `<p>${escHtml(JSON.stringify(DATA))}</p>`;
+}
+</script>
+</body>
+</html>

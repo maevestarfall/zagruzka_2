@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fable5 — Панель управления</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0d1117;--surface:#161b22;--border:#30363d;
+  --text:#e6edf3;--text2:#8b949e;--accent:#58a6ff;
+  --green:#3fb950;--red:#f85149;--yellow:#d29922;--purple:#bc8cff;
+  --font:'SF Mono','Cascadia Code','Consolas',monospace;
+}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;line-height:1.5;min-height:100vh}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+
+/* Header */
+.header{background:linear-gradient(135deg,#1a1e2e 0%,#0d1117 100%);border-bottom:1px solid var(--border);padding:24px 32px;display:flex;align-items:center;gap:16px}
+.logo{font-size:36px;filter:drop-shadow(0 0 8px rgba(88,166,255,.4))}
+.header-text h1{font-size:22px;font-weight:600;letter-spacing:.5px}
+.header-text p{color:var(--text2);font-size:13px}
+.status-badge{margin-left:auto;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;letter-spacing:.5px}
+.status-badge.online{background:rgba(63,185,80,.15);color:var(--green);border:1px solid rgba(63,185,80,.3)}
+.status-badge.offline{background:rgba(248,81,73,.15);color:var(--red);border:1px solid rgba(248,81,73,.3)}
+
+/* Tabs */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);padding:0 32px;background:var(--surface)}
+.tab{padding:12px 20px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;border-bottom:2px solid transparent;transition:all .2s}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* Content */
+.content{max-width:1200px;margin:0 auto;padding:24px 32px}
+.panel{display:none}.panel.active{display:block}
+
+/* Cards */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:24px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px}
+.card h3{font-size:13px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.card .value{font-size:28px;font-weight:700}
+.card .sub{font-size:12px;color:var(--text2);margin-top:4px}
+
+/* Info grid */
+.info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;margin-bottom:24px}
+.info-block{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px}
+.info-block h3{font-size:14px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.info-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(48,54,61,.5);font-size:13px}
+.info-row:last-child{border-bottom:none}
+.info-row .label{color:var(--text2)}
+.info-row .val{font-family:var(--font);color:var(--text)}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.tag.on{background:rgba(63,185,80,.15);color:var(--green)}
+.tag.off{background:rgba(248,81,73,.15);color:var(--red)}
+.tag.phase{background:rgba(188,140,255,.15);color:var(--purple)}
+
+/* Endpoint list */
+.endpoint-list{list-style:none}
+.endpoint-item{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 18px;margin-bottom:8px;display:flex;align-items:center;gap:12px}
+.method{font-family:var(--font);font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;min-width:50px;text-align:center}
+.method.get{background:rgba(63,185,80,.15);color:var(--green)}
+.method.post{background:rgba(88,166,255,.15);color:var(--accent)}
+.ep-path{font-family:var(--font);font-size:13px;color:var(--text);flex:1}
+.ep-desc{color:var(--text2);font-size:12px;max-width:300px;text-align:right}
+
+/* Console */
+.console-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:24px}
+.console-header{padding:12px 18px;background:rgba(0,0,0,.3);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.console-header h3{font-size:14px;flex:1}
+.console-input{display:flex;border-bottom:1px solid var(--border)}
+.console-input input,.console-input textarea{flex:1;background:transparent;border:none;color:var(--text);font-family:var(--font);font-size:13px;padding:12px 18px;outline:none}
+.console-input textarea{resize:vertical;min-height:60px}
+.console-input button{background:var(--accent);color:#fff;border:none;padding:8px 20px;cursor:pointer;font-weight:600;font-size:13px;transition:opacity .2s}
+.console-input button:hover{opacity:.85}
+.console-input button:disabled{opacity:.4;cursor:not-allowed}
+.console-output{max-height:400px;overflow-y:auto;padding:14px 18px;font-family:var(--font);font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-all;color:var(--text2)}
+.console-output .ok{color:var(--green)}.console-output .err{color:var(--red)}
+
+/* Debate table */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 14px;background:rgba(0,0,0,.3);color:var(--text2);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+td{padding:10px 14px;border-bottom:1px solid var(--border)}
+tr:hover td{background:rgba(88,166,255,.04)}
+
+/* Logs */
+.log-viewer{background:#000;border-radius:8px;padding:14px;font-family:var(--font);font-size:12px;line-height:1.7;max-height:500px;overflow-y:auto;white-space:pre-wrap;color:#9ca3af}
+.log-controls{display:flex;gap:12px;margin-bottom:12px;align-items:center;flex-wrap:wrap}
+.log-controls input,.log-controls select{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px;font-size:13px}
+.log-controls button{background:var(--accent);color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px}
+
+/* Responsive */
+@media(max-width:768px){
+  .header{padding:16px;flex-wrap:wrap}
+  .tabs{padding:0 16px;overflow-x:auto}
+  .content{padding:16px}
+  .cards{grid-template-columns:1fr}
+  .info-grid{grid-template-columns:1fr}
+  .endpoint-item{flex-wrap:wrap}
+  .ep-desc{max-width:none;text-align:left}
+}
+
+/* Animations */
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.loading{animation:pulse 1.5s ease-in-out infinite}
+.spin{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">🌀</div>
+  <div class="header-text">
+    <h1>Fable5 — Панель управления</h1>
+    <p id="header-sub">Удалённый доступ к lilush-bot для Viktor Ai</p>
+  </div>
+  <div id="status-badge" class="status-badge loading">проверка...</div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-panel="overview">📊 Обзор</div>
+  <div class="tab" data-panel="debates">🎯 Дебаты</div>
+  <div class="tab" data-panel="vision">🔮 Vision</div>
+  <div class="tab" data-panel="console">💻 Консоль</div>
+  <div class="tab" data-panel="db">🗃️ База данных</div>
+  <div class="tab" data-panel="logs">📜 Логи</div>
+  <div class="tab" data-panel="api">🔌 API</div>
+  <div class="tab" data-panel="state">⚙️ State</div>
+  <div class="tab" data-panel="botmenu">🤖 Меню бота</div>
+</div>
+
+<div class="content">
+
+<!-- OVERVIEW -->
+<div class="panel active" id="panel-overview">
+  <div class="cards" id="overview-cards">
+    <div class="card"><h3>Владелец</h3><div class="value" id="c-owner">—</div><div class="sub">Telegram ID</div></div>
+    <div class="card"><h3>Мозг</h3><div class="value" id="c-brain">—</div><div class="sub">Активный провайдер</div></div>
+    <div class="card"><h3>Аддоны</h3><div class="value" id="c-addons">—</div><div class="sub">Подключённые модули</div></div>
+    <div class="card"><h3>Аптайм</h3><div class="value" id="c-uptime">—</div><div class="sub">Время работы</div></div>
+  </div>
+  <div class="info-grid">
+    <div class="info-block">
+      <h3>🤖 Бот</h3>
+      <div id="bot-info">загрузка...</div>
+    </div>
+    <div class="info-block">
+      <h3>📦 Аддоны</h3>
+      <div id="addons-list">загрузка...</div>
+    </div>
+    <div class="info-block">
+      <h3>🌀 Fable5</h3>
+      <div id="fable5-info">загрузка...</div>
+    </div>
+    <div class="info-block">
+      <h3>🎯 Дебаты (сводка)</h3>
+      <div id="debates-summary">загрузка...</div>
+    </div>
+  </div>
+</div>
+
+<!-- DEBATES -->
+<div class="panel" id="panel-debates">
+  <h2 style="margin-bottom:16px">🎯 Двери дебатов</h2>
+  <div id="debates-content">загрузка...</div>
+</div>
+
+<!-- CONSOLE -->
+<div class="panel" id="panel-console">
+  <div class="console-wrap">
+    <div class="console-header">
+      <h3>💻 Терминал</h3>
+      <span style="color:var(--text2);font-size:12px">Выполнение команд на сервере (макс 120 сек)</span>
+    </div>
+    <div class="console-input">
+      <input id="cmd-input" type="text" placeholder="ls -la /data/" spellcheck="false">
+      <button id="cmd-run" onclick="runCmd()">▶ Run</button>
+    </div>
+    <div class="console-output" id="cmd-output">Введите команду и нажмите Run (или Enter)</div>
+  </div>
+  <div class="console-wrap">
+    <div class="console-header">
+      <h3>📨 Отправить Telegram-сообщение</h3>
+    </div>
+    <div class="console-input">
+      <input id="tg-text" type="text" placeholder="Текст сообщения..." style="flex:2">
+      <input id="tg-chat" type="text" placeholder="chat_id (пусто=владелец)" style="flex:1;border-left:1px solid var(--border)">
+      <button onclick="sendTg()">📨 Send</button>
+    </div>
+    <div class="console-output" id="tg-output" style="max-height:150px">Результат отправки</div>
+  </div>
+</div>
+
+<!-- DB QUERY -->
+<div class="panel" id="panel-db">
+  <div class="console-wrap">
+    <div class="console-header">
+      <h3>🗃️ SQLite — debate_v3.db</h3>
+      <span style="color:var(--text2);font-size:12px">Прямые запросы к базе дебатов</span>
+    </div>
+    <div class="console-input" style="flex-direction:column">
+      <textarea id="sql-input" placeholder="SELECT * FROM doors LIMIT 10" rows="3" spellcheck="false"></textarea>
+      <div style="display:flex">
+        <div style="flex:1;padding:8px 18px;color:var(--text2);font-size:12px" id="db-tables">Таблицы: загрузка...</div>
+        <button id="sql-run" onclick="runSQL()">▶ Query</button>
+      </div>
+    </div>
+    <div class="console-output" id="sql-output" style="max-height:500px">Введите SQL-запрос</div>
+  </div>
+</div>
+
+<!-- LOGS -->
+<div class="panel" id="panel-logs">
+  <div class="log-controls">
+    <label style="color:var(--text2);font-size:13px">Файл:</label>
+    <select id="log-file">
+      <option value="state.json">state.json</option>
+    </select>
+    <label style="color:var(--text2);font-size:13px">Строк:</label>
+    <input id="log-lines" type="number" value="100" min="1" max="5000" style="width:80px">
+    <button onclick="loadLogs()">🔄 Загрузить</button>
+  </div>
+  <div class="log-viewer" id="log-content">Нажмите «Загрузить» для просмотра файлов</div>
+</div>
+
+<!-- API -->
+<div class="panel" id="panel-api">
+  <h2 style="margin-bottom:16px">🔌 Доступные эндпоинты</h2>
+  <ul class="endpoint-list">
+    <li class="endpoint-item"><span class="method get">GET</span><span class="ep-path">/ping</span><span class="ep-desc">Проверка жизни, owner_id, brain</span></li>
+    <li class="endpoint-item"><span class="method get">GET</span><span class="ep-path">/info</span><span class="ep-desc">Провайдеры, аддоны, пути</span></li>
+    <li class="endpoint-item"><span class="method get">GET</span><span class="ep-path">/state</span><span class="ep-desc">Полный state.json</span></li>
+    <li class="endpoint-item"><span class="method post">POST</span><span class="ep-path">/state</span><span class="ep-desc">Deep-merge в state.json</span></li>
+    <li class="endpoint-item"><span class="method post">POST</span><span class="ep-path">/exec</span><span class="ep-desc">Shell-команда на сервере {"cmd":"..."}</span></li>
+    <li class="endpoint-item"><span class="method post">POST</span><span class="ep-path">/send</span><span class="ep-desc">Telegram-сообщение {"text":"..."}</span></li>
+    <li class="endpoint-item"><span class="method get">GET</span><span class="ep-path">/logs?file=...&lines=200</span><span class="ep-desc">Чтение файлов из /data/</span></li>
+    <li class="endpoint-item"><span class="method post">POST</span><span class="ep-path">/db</span><span class="ep-desc">SQLite-запрос к debate_v3.db {"sql":"..."}</span></li>
+    <li class="endpoint-item"><span class="method get">GET</span><span class="ep-path">/files?path=.</span><span class="ep-desc">Список файлов в /data/</span></li>
+    <li class="endpoint-item"><span class="method get">GET</span><span class="ep-path">/capabilities</span><span class="ep-desc">Список возможностей и функций бота</span></li>
+    <li class="endpoint-item"><span class="method get">GET</span><span class="ep-path">/dashboard</span><span class="ep-desc">Эта страница</span></li>
+  </ul>
+  <div class="info-block" style="margin-top:24px">
+    <h3>🔒 Безопасность</h3>
+    <div style="color:var(--text2);font-size:13px;line-height:1.8">
+      • Все эндпоинты защищены токеном в URL<br>
+      • Токен ротируется при каждом «Сгенерировать ссылку»<br>
+      • «Выключить ссылку» мгновенно блокирует доступ без ротации токена<br>
+      • Неверный/отключённый токен → 403 (не раскрывает существование токена)
+    </div>
+  </div>
+</div>
+
+<!-- VISION -->
+<div class="panel" id="panel-vision">
+  <h2 style="margin-bottom:24px">🔮 Vision — Управление возможностями бота</h2>
+  
+  <h3 style="margin-bottom:12px; color: var(--text2); font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">🔑 Внешние API и Интеграции</h3>
+  <div class="cards" style="grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); margin-bottom: 32px;" id="vision-keys">
+    <span class="loading">загрузка ключей...</span>
+  </div>
+
+  <h3 style="margin-bottom:12px; color: var(--text2); font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">⚙️ Функции и возможности</h3>
+  <div class="cards" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr))" id="vision-content">
+    <span class="loading">загрузка возможностей...</span>
+  </div>
+</div>
+
+<!-- BOT MENU (ТЗ-1 §4.7: раздел «Меню бота» в SPA) -->
+<div class="panel" id="panel-botmenu">
+  <div class="console-wrap">
+    <div class="console-header">
+      <h3>🤖 Меню бота</h3>
+      <div id="botmenu-crumbs" style="flex:1;color:var(--text2);font-size:12px"></div>
+      <button onclick="loadBotMenu('gateway:home')" style="background:var(--accent);color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px">🏠 Домой</button>
+    </div>
+    <div style="padding:18px">
+      <div id="botmenu-title" style="font-weight:600;margin-bottom:6px"></div>
+      <div id="botmenu-body" style="color:var(--text2);font-size:13px;white-space:pre-wrap;margin-bottom:14px">загрузка...</div>
+      <div id="botmenu-rows" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- STATE -->
+<div class="panel" id="panel-state">
+  <div class="console-wrap">
+    <div class="console-header">
+      <h3>⚙️ state.json</h3>
+      <button onclick="loadState()" style="background:var(--accent);color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px">🔄 Обновить</button>
+    </div>
+    <div class="console-output" id="state-content" style="max-height:600px">загрузка...</div>
+  </div>
+</div>
+
+</div>
+
+<script>
+const BASE = location.pathname.replace(/\/+$/,'');
+const api = (ep,opts) => fetch(BASE+'/'+ep, opts).then(r=>r.json()).catch(e=>({error:String(e)}));
+
+// Tabs
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  document.getElementById('panel-'+t.dataset.panel).classList.add('active');
+  if(t.dataset.panel==='debates') loadDebates();
+  if(t.dataset.panel==='state') loadState();
+  if(t.dataset.panel==='db') loadDBMeta();
+  if(t.dataset.panel==='vision') loadCapabilities();
+  if(t.dataset.panel==='botmenu') loadBotMenu('gateway:home');
+}));
+
+// Bot menu (ТЗ-1 §4.7): GET /menu?screen=<id> + POST /action, хлебные крошки по parent.
+function renderBotScreen(screen){
+  document.getElementById('botmenu-title').textContent = screen.title || '';
+  document.getElementById('botmenu-body').textContent = screen.body || '';
+  const crumbs = document.getElementById('botmenu-crumbs');
+  crumbs.innerHTML = '';
+  if(screen.parent){
+    const a = document.createElement('a');
+    a.textContent = '← ' + screen.parent;
+    a.href = '#'; a.style.color = 'var(--accent)'; a.style.cursor = 'pointer';
+    a.onclick = (e)=>{e.preventDefault(); loadBotMenu(screen.parent);};
+    crumbs.appendChild(a);
+  }
+  const box = document.getElementById('botmenu-rows');
+  box.innerHTML = '';
+  (screen.rows||[]).forEach(row=>{
+    const div = document.createElement('div');
+    div.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap';
+    row.forEach(btn=>{
+      const b = document.createElement('button');
+      b.textContent = btn.text;
+      b.style.cssText = 'background:var(--surface);color:var(--text);border:1px solid var(--border);padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px';
+      if(btn.url){ b.onclick = ()=>window.open(btn.url,'_blank'); }
+      else { b.onclick = ()=>botMenuAction(btn.action); }
+      div.appendChild(b);
+    });
+    box.appendChild(div);
+  });
+}
+async function loadBotMenu(screenId){
+  const r = await api('menu?screen='+encodeURIComponent(screenId||'gateway:home'));
+  if(r.screen) renderBotScreen(r.screen);
+  else document.getElementById('botmenu-body').textContent = r.error==='gateway_disabled' ? 'Шлюз выключен (включи «🌐 Платформы» в TG).' : (r.error||'ошибка');
+}
+async function botMenuAction(action){
+  const r = await api('action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action})});
+  if(r.screen){ renderBotScreen(r.screen); return; }
+  if(r.error==='tg_only'){
+    document.getElementById('botmenu-body').textContent = 'Этот экран пока только в Telegram.' + (r.deeplink ? ' → '+r.deeplink : '');
+    return;
+  }
+  if(r.text) document.getElementById('botmenu-body').textContent = r.text;
+  if(r.error && !r.text) document.getElementById('botmenu-body').textContent = 'Ошибка: '+r.error;
+}
+
+// Init
+async function init(){
+  try{
+    const [ping, info] = await Promise.all([api('ping'), api('info')]);
+    const badge = document.getElementById('status-badge');
+    if(ping.ok){
+      badge.textContent='● онлайн';
+      badge.className='status-badge online';
+    } else {
+      badge.textContent='● офлайн';
+      badge.className='status-badge offline';
+    }
+    document.getElementById('c-owner').textContent = ping.owner_id||'—';
+    document.getElementById('c-brain').textContent = ping.brain||'не задан';
+    document.getElementById('c-addons').textContent = (info.addons||[]).length;
+    if(ping.rotated_at){
+      const ago = Math.floor((Date.now()/1000 - ping.rotated_at)/3600);
+      document.getElementById('c-uptime').textContent = ago<1?'<1ч':ago+'ч';
+      document.getElementById('c-uptime').nextElementSibling.textContent = 'С момента ротации токена';
+    }
+    // Bot info
+    document.getElementById('bot-info').innerHTML = `
+      <div class="info-row"><span class="label">Owner ID</span><span class="val">${ping.owner_id}</span></div>
+      <div class="info-row"><span class="label">Brain</span><span class="val">${ping.brain||'не задан'}</span></div>
+      <div class="info-row"><span class="label">Provider</span><span class="val">${info.provider||'не задан'}</span></div>
+      <div class="info-row"><span class="label">Ключи</span><span class="val">${(info.providers_with_keys||[]).join(', ')||'—'}</span></div>
+      <div class="info-row"><span class="label">Data dir</span><span class="val">${info.data_dir}</span></div>
+      <div class="info-row"><span class="label">Repo root</span><span class="val">${info.repo_root}</span></div>
+    `;
+    // Addons
+    const addons = info.addons||[];
+    document.getElementById('addons-list').innerHTML = addons.map(a=>`
+      <div class="info-row"><span class="val">${a}</span><span class="tag on">active</span></div>
+    `).join('');
+    // Fable5 info
+    document.getElementById('fable5-info').innerHTML = `
+      <div class="info-row"><span class="label">Статус</span><span class="tag on">enabled</span></div>
+      <div class="info-row"><span class="label">Версия</span><span class="val">${ping.version||'—'}</span></div>
+      <div class="info-row"><span class="label">Ротация</span><span class="val">${ping.rotated_at?new Date(ping.rotated_at*1000).toLocaleString('ru'):'—'}</span></div>
+      <div class="info-row"><span class="label">Права</span><span class="val">state, exec, send, logs, db, files</span></div>
+    `;
+    // Debates summary
+    loadDebatesSummary();
+    // Files for log viewer
+    loadFileList();
+  }catch(e){
+    document.getElementById('status-badge').textContent='● ошибка';
+    document.getElementById('status-badge').className='status-badge offline';
+  }
+}
+
+async function loadDebatesSummary(){
+  const r = await api('db', {method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({sql:"SELECT d.door_id, d.title, d.current_phase, d.status, (SELECT COUNT(*) FROM msgs m WHERE m.door_id=d.door_id) as msg_count, (SELECT COUNT(*) FROM atoms a WHERE a.door_id=d.door_id) as atom_count FROM doors d"})});
+  if(r.rows){
+    document.getElementById('debates-summary').innerHTML = r.rows.map(row=>`
+      <div class="info-row">
+        <span class="val" style="flex:1">${row[1]?.split('—')[0]||row[0]}</span>
+        <span class="tag phase">${row[2]}</span>
+        <span class="val" style="margin-left:8px">${row[4]} msgs, ${row[5]} atoms</span>
+      </div>
+    `).join('')||'<span style="color:var(--text2)">Нет активных дверей</span>';
+  } else {
+    document.getElementById('debates-summary').innerHTML = '<span style="color:var(--text2)">БД недоступна</span>';
+  }
+}
+
+async function loadDebates(){
+  const el = document.getElementById('debates-content');
+  el.innerHTML = '<span class="loading">загрузка дебатов...</span>';
+  const doors = await api('db',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({sql:"SELECT * FROM doors"})});
+  if(!doors.rows||!doors.rows.length){el.innerHTML='<p>Нет активных дверей</p>';return;}
+
+  let html = '';
+  for(const d of doors.rows){
+    const doorId=d[0], title=d[1], phase=d[3], status=d[4];
+    const msgs = await api('db',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({sql:`SELECT debater_id, COUNT(*) FROM msgs WHERE door_id='${doorId}' GROUP BY debater_id`})});
+    const atoms = await api('db',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({sql:`SELECT COUNT(*), SUM(locked) FROM atoms WHERE door_id='${doorId}'`})});
+    const viols = await api('db',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({sql:`SELECT COUNT(*) FROM violations WHERE door_id='${doorId}'`})});
+    const gates = await api('db',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({sql:`SELECT phase, status, ran_at FROM phase_gates WHERE door_id='${doorId}' ORDER BY ran_at DESC`})});
+
+    html += `<div class="info-block" style="margin-bottom:16px">
+      <h3>${title} <span class="tag ${status==='open'?'on':'off'}" style="margin-left:8px">${status}</span>
+        <span class="tag phase" style="margin-left:4px">${phase}</span></h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+        <div>
+          <strong style="font-size:12px;color:var(--text2)">СООБЩЕНИЯ ПО ДЕБАТЁРАМ</strong>
+          ${(msgs.rows||[]).map(r=>`<div class="info-row"><span class="label">${r[0]}</span><span class="val">${r[1]}</span></div>`).join('')}
+        </div>
+        <div>
+          <strong style="font-size:12px;color:var(--text2)">АТОМЫ</strong>
+          <div class="info-row"><span class="label">Всего</span><span class="val">${atoms.rows?.[0]?.[0]||0}</span></div>
+          <div class="info-row"><span class="label">Заблокировано</span><span class="val">${atoms.rows?.[0]?.[1]||0}</span></div>
+          <div class="info-row"><span class="label">Нарушения</span><span class="val">${viols.rows?.[0]?.[0]||0}</span></div>
+        </div>
+      </div>
+      ${gates.rows?.length?`<div style="margin-top:12px"><strong style="font-size:12px;color:var(--text2)">PHASE GATES</strong>
+        <table style="margin-top:6px"><tr><th>Фаза</th><th>Статус</th><th>Время</th></tr>
+        ${gates.rows.map(g=>`<tr><td>${g[0]}</td><td><span class="tag ${g[1]==='passed'?'on':'off'}">${g[1]}</span></td><td>${new Date(g[2]*1000).toLocaleString('ru')}</td></tr>`).join('')}
+        </table></div>`:''}
+    </div>`;
+  }
+  el.innerHTML = html;
+}
+
+// Console
+async function runCmd(){
+  const input = document.getElementById('cmd-input');
+  const output = document.getElementById('cmd-output');
+  const btn = document.getElementById('cmd-run');
+  const cmd = input.value.trim();
+  if(!cmd) return;
+  btn.disabled=true; btn.textContent='⏳';
+  output.innerHTML = `<span style="color:var(--accent)">$ ${esc(cmd)}</span>\n<span class="loading">выполняется...</span>`;
+  const r = await api('exec',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cmd,timeout:60})});
+  let out = '';
+  if(r.stdout) out += `<span class="ok">${esc(r.stdout)}</span>`;
+  if(r.stderr) out += `<span class="err">${esc(r.stderr)}</span>`;
+  if(r.error) out += `<span class="err">ERROR: ${esc(r.error)}</span>`;
+  if(r.returncode!==undefined) out += `\n<span style="color:var(--text2)">exit code: ${r.returncode}</span>`;
+  output.innerHTML = `<span style="color:var(--accent)">$ ${esc(cmd)}</span>\n${out}`;
+  btn.disabled=false; btn.textContent='▶ Run';
+}
+document.getElementById('cmd-input').addEventListener('keydown',e=>{if(e.key==='Enter')runCmd()});
+
+// Telegram send
+async function sendTg(){
+  const text = document.getElementById('tg-text').value.trim();
+  if(!text) return;
+  const chatId = document.getElementById('tg-chat').value.trim();
+  const body = {text};
+  if(chatId) body.chat_id = parseInt(chatId)||chatId;
+  const r = await api('send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  document.getElementById('tg-output').innerHTML = r.ok
+    ? `<span class="ok">✅ Отправлено! message_id=${r.message_id}, chat_id=${r.chat_id}</span>`
+    : `<span class="err">❌ ${esc(r.error||JSON.stringify(r))}</span>`;
+}
+
+// DB
+async function loadDBMeta(){
+  const r = await api('db',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({sql:"SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"})});
+  if(r.rows){
+    document.getElementById('db-tables').textContent = 'Таблицы: '+r.rows.map(r=>r[0]).join(', ');
+  }
+}
+async function runSQL(){
+  const input = document.getElementById('sql-input');
+  const output = document.getElementById('sql-output');
+  const btn = document.getElementById('sql-run');
+  const sql = input.value.trim();
+  if(!sql) return;
+  btn.disabled=true;
+  output.innerHTML='<span class="loading">выполняется...</span>';
+  const r = await api('db',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sql})});
+  if(r.error){
+    output.innerHTML=`<span class="err">❌ ${esc(r.error)}</span>`;
+  } else if(r.columns && r.rows){
+    let tbl = '<table><tr>'+r.columns.map(c=>`<th>${esc(c)}</th>`).join('')+'</tr>';
+    r.rows.forEach(row=>{
+      tbl += '<tr>'+row.map(v=>{
+        let s = v===null?'NULL':String(v);
+        if(s.length>200) s=s.slice(0,200)+'…';
+        return `<td>${esc(s)}</td>`;
+      }).join('')+'</tr>';
+    });
+    tbl += '</table>';
+    output.innerHTML = `<span style="color:var(--text2)">${r.rows.length} строк</span>\n`+tbl;
+  } else {
+    output.innerHTML = `<span class="ok">${esc(JSON.stringify(r,null,2))}</span>`;
+  }
+  btn.disabled=false;
+}
+document.getElementById('sql-input').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.ctrlKey)runSQL()});
+
+// Logs
+async function loadFileList(){
+  const r = await api('files');
+  const sel = document.getElementById('log-file');
+  if(r.files){
+    sel.innerHTML='';
+    r.files.forEach(f=>{
+      const opt = document.createElement('option');
+      opt.value=f.name; opt.textContent=`${f.name} (${f.size})`;
+      sel.appendChild(opt);
+    });
+  }
+}
+async function loadLogs(){
+  const file = document.getElementById('log-file').value;
+  const lines = document.getElementById('log-lines').value;
+  const el = document.getElementById('log-content');
+  el.textContent='загрузка...';
+  const r = await api(`logs?file=${encodeURIComponent(file)}&lines=${lines}`);
+  if(r.lines) el.textContent = r.lines.join('\n');
+  else if(r.error) el.innerHTML=`<span style="color:var(--red)">${esc(r.error)}</span>`;
+  else el.textContent = JSON.stringify(r,null,2);
+}
+
+// State
+async function loadState(){
+  const el = document.getElementById('state-content');
+  el.textContent='загрузка...';
+  const r = await api('state');
+  el.textContent = JSON.stringify(r,null,2);
+}
+
+async function loadCapabilities() {
+  loadKeys();
+  const el = document.getElementById('vision-content');
+  el.innerHTML = '<span class="loading">загрузка возможностей...</span>';
+  const r = await api('capabilities');
+  if (r.capabilities && r.capabilities.length) {
+    el.innerHTML = r.capabilities.map(c => `
+      <div class="card" style="display: flex; flex-direction: column; gap: 8px;">
+        <h3 style="color: var(--accent); font-size: 14px;">${esc(c.title)}</h3>
+        <p style="font-size: 13px; color: var(--text); white-space: pre-wrap;">${esc(c.description)}</p>
+        <span class="tag phase" style="align-self: flex-start; font-size: 10px;">${esc(c.key)}</span>
+      </div>
+    `).join('');
+  } else {
+    el.innerHTML = '<p style="color: var(--text2)">Не удалось загрузить возможности бота</p>';
+  }
+}
+
+async function loadKeys() {
+  const el = document.getElementById('vision-keys');
+  el.innerHTML = '<span class="loading">загрузка ключей...</span>';
+  const r = await api('keys');
+  if (r.keys) {
+    el.innerHTML = Object.entries(r.keys).map(([tool, data]) => {
+      const isActive = data.source !== 'none';
+      const statusClass = isActive ? 'on' : 'off';
+      const statusText = isActive ? `Активен (${data.source})` : 'Не настроен';
+      return `
+        <div class="card" style="display: flex; flex-direction: column; gap: 12px; border: 1px solid var(--border); border-radius: 12px; padding: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="color: var(--accent); font-size: 14px; margin: 0;">${esc(data.label)}</h3>
+            <span class="tag ${statusClass}">${esc(statusText)}</span>
+          </div>
+          <p style="font-size: 12px; color: var(--text2); margin: 0;">${esc(data.hint)}</p>
+          <div style="font-size: 12px; font-family: var(--font); color: var(--text);">
+            ${isActive ? `Текущий ключ: <code>${esc(data.masked)}</code>` : 'Ключ не задан'}
+          </div>
+          <div style="display: flex; gap: 8px; margin-top: auto;">
+            <input type="password" id="key-${tool}" placeholder="Новый ключ..." style="flex: 1; background: rgba(0,0,0,0.2); border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 6px; font-size: 13px; outline: none;">
+            <button onclick="saveKey('${tool}')" style="background: var(--green); color: #fff; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">Сохранить</button>
+            ${isActive ? `<button onclick="deleteKey('${tool}')" style="background: var(--red); color: #fff; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;">🗑</button>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  } else {
+    el.innerHTML = '<p style="color: var(--text2)">Не удалось загрузить API-ключи</p>';
+  }
+}
+
+async function saveKey(tool) {
+  const input = document.getElementById(`key-${tool}`);
+  const key = input.value.trim();
+  if (!key) {
+    alert('Введите ключ перед сохранением');
+    return;
+  }
+  const r = await api('keys', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tool, key })
+  });
+  if (r.ok) {
+    input.value = '';
+    loadKeys();
+  } else {
+    alert('Ошибка сохранения: ' + (r.error || JSON.stringify(r)));
+  }
+}
+
+async function deleteKey(tool) {
+  if (!confirm(`Вы действительно хотите удалить ключ для ${tool}?`)) return;
+  const r = await api('keys', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tool, key: '' })
+  });
+  if (r.ok) {
+    loadKeys();
+  } else {
+    alert('Ошибка удаления: ' + (r.error || JSON.stringify(r)));
+  }
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="ru" class="bgroot">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>🎓 Обучалка — сосуд знаний</title>
+<style>
+  :root { color-scheme: dark;
+    --bg:#0f1115; --panel:#141821; --line:#262c38; --text:#e6e6e6;
+    --muted:#94a3b8; --accent:#2b6cb0; --accent2:#63b3ed; --good:#9ae6b4; --warn:#f6ad55; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,sans-serif; background:var(--bg); color:var(--text);
+         display:flex; flex-direction:column; min-height:100vh; }
+  header { padding:12px 18px; background:var(--panel); border-bottom:1px solid var(--line);
+           display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  header h1 { margin:0; font-size:17px; }
+  #rolebadge { font-size:12px; padding:4px 10px; border-radius:999px; background:#20304a; color:var(--accent2); }
+  #stats { font-size:12px; color:var(--muted); }
+  .toolbar { display:flex; gap:8px; flex-wrap:wrap; }
+  .toolbar a, .toolbar button { font-size:12px; }
+  main { flex:1; display:flex; gap:14px; padding:14px; align-items:flex-start; flex-wrap:wrap; }
+  .col { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px; }
+  #left { flex:1 1 300px; max-width:420px; }
+  #right { flex:2 1 420px; min-height:300px; }
+  h2 { font-size:14px; margin:0 0 10px; color:var(--accent2); }
+  .leaf { display:flex; align-items:center; justify-content:space-between; gap:8px;
+          padding:8px 10px; border:1px solid var(--line); border-radius:8px; margin-bottom:6px;
+          cursor:pointer; font-size:13px; }
+  .leaf:hover { border-color:var(--accent); }
+  .leaf.active { border-color:var(--accent2); background:#182031; }
+  .badge { font-size:11px; padding:2px 8px; border-radius:999px; background:#20262f; color:var(--muted); white-space:nowrap; }
+  .badge.b10 { background:#1c3327; color:var(--good); }
+  .badge.b79 { background:#3a2f1a; color:var(--warn); }
+  label { display:block; font-size:12px; color:var(--muted); margin:10px 0 4px; }
+  textarea, input[type=text] { width:100%; background:#0f131b; color:var(--text);
+    border:1px solid var(--line); border-radius:8px; padding:8px; font-size:13px; font-family:inherit; }
+  textarea { min-height:90px; resize:vertical; }
+  button { background:var(--accent); color:#fff; border:0; border-radius:8px; padding:8px 14px;
+           font-size:13px; cursor:pointer; }
+  button.ghost { background:#2b3240; }
+  button:disabled { opacity:.4; cursor:default; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:10px; }
+  .scorebtns { display:flex; gap:4px; flex-wrap:wrap; }
+  .scorebtns button { padding:6px 10px; background:#2b3240; }
+  .scorebtns button.s10 { background:#1c3327; color:var(--good); }
+  pre { background:#0f131b; border:1px solid var(--line); border-radius:8px; padding:10px;
+        font-size:12px; white-space:pre-wrap; word-break:break-word; max-height:280px; overflow:auto; }
+  .note { border-left:3px solid var(--warn); padding:6px 10px; margin:6px 0; font-size:12px; color:#e2e8f0; background:#191d27; border-radius:0 8px 8px 0; }
+  .attempt { border-left:3px solid var(--accent); padding:6px 10px; margin:6px 0; font-size:12px; background:#151a25; border-radius:0 8px 8px 0; }
+  #msg { position:fixed; bottom:14px; right:14px; background:#1c3327; color:var(--good);
+         padding:10px 16px; border-radius:10px; font-size:13px; display:none; }
+  #msg.err { background:#3a1f22; color:#feb2b2; }
+  details { margin-top:10px; }
+  summary { cursor:pointer; font-size:13px; color:var(--accent2); }
+</style>
+</head>
+<body>
+<header>
+  <h1>🎓 Обучалка — сосуд знаний</h1>
+  <span id="rolebadge">…</span>
+  <span id="stats"></span>
+  <div class="toolbar">
+    <button class="ghost" onclick="showHandoff()">📋 Бриф (handoff)</button>
+    <button class="ghost" onclick="showJournal()">📖 Журнал</button>
+    <button class="ghost" onclick="location.href='export.jsonl'">📤 JSONL</button>
+    <button class="ghost" onclick="location.href='export.md'">📄 MD</button>
+  </div>
+</header>
+<main>
+  <div class="col" id="left">
+    <h2 id="vtitle">Сосуд</h2>
+    <div id="leaves"></div>
+    <div class="row" id="teacher-left" style="display:none">
+      <input type="text" id="newleaf" placeholder="Название нового листика" />
+      <button onclick="createLeaf()">+ Листик</button>
+    </div>
+    <details id="qwenbox">
+      <summary>🎓 Ученик Qwen (endpoint)</summary>
+      <label>qwen_base_url (OpenAI-совместимый, напр. http://host:11434/v1)</label>
+      <input type="text" id="qurl" />
+      <label>Модель</label>
+      <input type="text" id="qmodel" />
+      <div class="row">
+        <button id="qsave" onclick="saveConfig()">Сохранить</button>
+        <button class="ghost" onclick="pingStudent()">Проверить связь</button>
+      </div>
+    </details>
+    <details>
+      <summary>🗺 Макро-карта (каркас)</summary>
+      <textarea id="macro"></textarea>
+      <div class="row"><button id="macrosave" onclick="saveMacro()">Сохранить каркас</button></div>
+    </details>
+  </div>
+  <div class="col" id="right">
+    <h2 id="ltitle">Выбери листик слева</h2>
+    <div id="detail" style="display:none">
+      <label>Задание (task) — пишет архитектор заранее</label>
+      <textarea id="task"></textarea>
+      <label>Знание (content) — идеальная форма кусочка</label>
+      <textarea id="content"></textarea>
+      <div class="row" id="teacher-actions">
+        <button id="save" onclick="saveLeaf()">💾 Сохранить</button>
+        <button class="ghost" id="run" onclick="runStudent()">▶ Прогнать ученика</button>
+        <button class="ghost" id="unlock" onclick="unlockLeaf()" style="display:none">🔓 Разблокировать</button>
+      </div>
+      <label>Балл (10 — в основание, блокируется)</label>
+      <div class="scorebtns" id="scorebtns"></div>
+      <label>Замечание (ревизор: «в правильном русле»)</label>
+      <div class="row">
+        <input type="text" id="notetext" placeholder="Текст замечания" style="flex:1" />
+        <button class="ghost" onclick="addNote()">Оставить</button>
+      </div>
+      <div id="notes"></div>
+      <details open><summary>Попытки ученика</summary><div id="attempts"></div></details>
+    </div>
+    <pre id="bigview" style="display:none"></pre>
+  </div>
+</main>
+<div id="msg"></div>
+<script>
+const $ = id => document.getElementById(id);
+let ROLE = null, VESSEL = null, LEAF = null;
+
+function toast(text, err) {
+  const m = $('msg'); m.textContent = text; m.className = err ? 'err' : '';
+  m.style.display = 'block'; setTimeout(() => m.style.display = 'none', 3000);
+}
+async function api(path, opts) {
+  const r = await fetch(path, Object.assign({headers:{'Content-Type':'application/json'}}, opts));
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) { throw new Error(data.error || ('HTTP ' + r.status)); }
+  return data;
+}
+function isTeacher() { return ROLE === 'teacher'; }
+
+async function load() {
+  const data = await api('vessels');
+  ROLE = data.role;
+  $('rolebadge').textContent = isTeacher() ? '👩‍🏫 учитель' : '🔍 ревизор';
+  const s = data.stats;
+  $('stats').textContent = `сосудов ${s.vessels} · листиков ${s.leaves} · основание ${s.foundation} · близко (7–9) ${s.near} · пустых ${s.empty}`;
+  if (!data.vessels.length) { $('vtitle').textContent = 'Сосудов нет'; return; }
+  const vid = VESSEL ? VESSEL.id : data.vessels[0].id;
+  VESSEL = await api('vessel/' + vid);
+  $('vtitle').textContent = '🏺 ' + VESSEL.title;
+  $('macro').value = VESSEL.macro_map || '';
+  renderLeaves();
+  const teacherOnly = isTeacher() ? '' : 'none';
+  $('teacher-left').style.display = isTeacher() ? 'flex' : 'none';
+  $('macrosave').style.display = teacherOnly;
+  $('qsave').style.display = teacherOnly;
+  $('macro').disabled = !isTeacher();
+  if (isTeacher()) {
+    const cfg = await api('config');
+    $('qurl').value = cfg.qwen_base_url || ''; $('qmodel').value = cfg.qwen_model || '';
+  } else { $('qurl').disabled = $('qmodel').disabled = true; }
+}
+function badge(leaf) {
+  if (leaf.locked) return '<span class="badge b10">🔒 10</span>';
+  if (leaf.score >= 7) return `<span class="badge b79">${leaf.score}/10</span>`;
+  if (!leaf.content) return '<span class="badge">пусто</span>';
+  return `<span class="badge">${leaf.score}/10</span>`;
+}
+function renderLeaves() {
+  $('leaves').innerHTML = VESSEL.leaves.map(l =>
+    `<div class="leaf ${LEAF && LEAF.id === l.id ? 'active' : ''}" onclick="openLeaf(${l.id})">
+       <span>${l.title}</span>${badge(l)}</div>`).join('');
+}
+async function openLeaf(id) {
+  LEAF = await api('leaf/' + id);
+  renderLeaves();
+  $('bigview').style.display = 'none';
+  $('detail').style.display = 'block';
+  $('ltitle').textContent = (LEAF.locked ? '🔒 ' : '🍃 ') + LEAF.title;
+  $('task').value = LEAF.task || '';
+  $('content').value = LEAF.content || '';
+  const editable = isTeacher() && !LEAF.locked;
+  $('task').disabled = $('content').disabled = !editable;
+  $('save').style.display = editable ? '' : 'none';
+  $('run').style.display = isTeacher() ? '' : 'none';
+  $('unlock').style.display = (isTeacher() && LEAF.locked) ? '' : 'none';
+  $('scorebtns').innerHTML = Array.from({length: 11}, (_, i) =>
+    `<button class="${i === 10 ? 's10' : ''}" onclick="score(${i})">${i}</button>`).join('');
+  $('notes').innerHTML = (LEAF.notes || []).map(n =>
+    `<div class="note">[${n.role}] ${n.text}</div>`).join('') || '<div class="note" style="opacity:.5">Замечаний нет</div>';
+  $('attempts').innerHTML = (LEAF.attempts || []).map(a =>
+    `<div class="attempt"><b>Попытка #${a.id}</b><br/>${(a.answer || '').slice(0, 600).replace(/</g, '&lt;')}</div>`).join('')
+    || '<div class="attempt" style="opacity:.5">Ученика ещё не прогоняли</div>';
+}
+async function saveLeaf() {
+  try {
+    await api('leaf/' + LEAF.id, {method: 'PUT', body: JSON.stringify({task: $('task').value, content: $('content').value})});
+    toast('💾 Сохранено'); await load(); await openLeaf(LEAF.id);
+  } catch (e) { toast(e.message, true); }
+}
+async function score(n) {
+  try {
+    const r = await api('leaf/' + LEAF.id + '/score', {method: 'POST', body: JSON.stringify({score: n})});
+    toast(r.locked ? '🔒 Листик ушёл в основание' : ('Балл: ' + n));
+    await load(); await openLeaf(LEAF.id);
+  } catch (e) { toast(e.message, true); }
+}
+async function unlockLeaf() {
+  try { await api('leaf/' + LEAF.id + '/unlock', {method: 'POST', body: '{}'});
+    toast('🔓 Разблокирован'); await load(); await openLeaf(LEAF.id);
+  } catch (e) { toast(e.message, true); }
+}
+async function addNote() {
+  const text = $('notetext').value.trim(); if (!text) return;
+  try { await api('leaf/' + LEAF.id + '/note', {method: 'POST', body: JSON.stringify({text})});
+    $('notetext').value = ''; toast('Замечание оставлено'); await openLeaf(LEAF.id);
+  } catch (e) { toast(e.message, true); }
+}
+async function runStudent() {
+  $('run').disabled = true; toast('▶ Прогоняю ученика (stateless)…');
+  try {
+    const r = await api('student/run', {method: 'POST', body: JSON.stringify({leaf_id: LEAF.id})});
+    toast('Ответ получен — попытка #' + r.attempt_id); await openLeaf(LEAF.id);
+  } catch (e) { toast(e.message, true); }
+  $('run').disabled = false;
+}
+async function createLeaf() {
+  const title = $('newleaf').value.trim(); if (!title) return;
+  try {
+    await api('leaf', {method: 'POST', body: JSON.stringify({vessel_id: VESSEL.id, title, position: VESSEL.leaves.length})});
+    $('newleaf').value = ''; toast('Листик создан'); await load();
+  } catch (e) { toast(e.message, true); }
+}
+async function saveMacro() {
+  try { await api('vessel/' + VESSEL.id, {method: 'PUT', body: JSON.stringify({macro_map: $('macro').value})});
+    toast('Каркас сохранён');
+  } catch (e) { toast(e.message, true); }
+}
+async function saveConfig() {
+  try { await api('config', {method: 'POST', body: JSON.stringify({qwen_base_url: $('qurl').value, qwen_model: $('qmodel').value})});
+    toast('Настройки ученика сохранены');
+  } catch (e) { toast(e.message, true); }
+}
+async function pingStudent() {
+  const r = await api('student/ping');
+  toast(r.ok ? '✅ Ученик на связи' : ('Ученик недоступен: ' + (r.error || r.status)), !r.ok);
+}
+async function showHandoff() {
+  const text = await (await fetch('handoff')).text();
+  $('detail').style.display = 'none'; $('ltitle').textContent = '📋 Бриф для нового учителя';
+  $('bigview').textContent = text; $('bigview').style.display = 'block';
+}
+async function showJournal() {
+  const data = await api('journal');
+  $('detail').style.display = 'none'; $('ltitle').textContent = '📖 Журнал смен';
+  $('bigview').textContent = data.journal.map(j =>
+    `${new Date(j.created_at * 1000).toLocaleString('ru')} [${j.role}] ${j.action}: ${j.detail}`).join('\n') || 'Пусто';
+  $('bigview').style.display = 'block';
+}
+load().catch(e => toast(e.message, true));
+</script>
+</body>
+</html>
