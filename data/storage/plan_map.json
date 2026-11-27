@@ -1,0 +1,264 @@
+{
+  "version": 2,
+  "active": 0,
+  "plans": [
+    {
+      "name": "план 1",
+      "nodes": [
+        {
+          "id": "nmsdnf7sw39ez5",
+          "kind": "box",
+          "name": "",
+          "text": "",
+          "blocks": [
+            {
+              "t": "text",
+              "v": ""
+            }
+          ],
+          "actions": "",
+          "actions_note": "",
+          "prompt": "",
+          "prompt_note": "",
+          "show_actions": false,
+          "show_prompt": false,
+          "x": 308,
+          "y": 219,
+          "w": 0,
+          "h": 0,
+          "rows": 0,
+          "cols": 0,
+          "cells": {}
+        },
+        {
+          "id": "nmsdq569baiak7",
+          "kind": "box",
+          "name": "",
+          "text": "",
+          "blocks": [
+            {
+              "t": "text",
+              "v": ""
+            }
+          ],
+          "actions": "",
+          "actions_note": "",
+          "prompt": "",
+          "prompt_note": "",
+          "show_actions": false,
+          "show_prompt": false,
+          "x": 805,
+          "y": 67,
+          "w": 360,
+          "h": 0,
+          "rows": 0,
+          "cols": 0,
+          "cells": {}
+        },
+        {
+          "id": "nmsdqfaeeqdlwd",
+          "kind": "box",
+          "name": "",
+          "text": "",
+          "blocks": [
+            {
+              "t": "text",
+              "v": ""
+            }
+          ],
+          "actions": "",
+          "actions_note": "",
+          "prompt": "",
+          "prompt_note": "",
+          "show_actions": false,
+          "show_prompt": false,
+          "x": 560,
+          "y": 60,
+          "w": 0,
+          "h": 0,
+          "rows": 0,
+          "cols": 0,
+          "cells": {}
+        },
+        {
+          "id": "nmsdqfaegbuk30",
+          "kind": "box",
+          "name": "",
+          "text": "",
+          "blocks": [
+            {
+              "t": "text",
+              "v": ""
+            }
+          ],
+          "actions": "",
+          "actions_note": "",
+          "prompt": "",
+          "prompt_note": "",
+          "show_actions": false,
+          "show_prompt": false,
+          "x": 810,
+          "y": 60,
+          "w": 0,
+          "h": 0,
+          "rows": 0,
+          "cols": 0,
+          "cells": {}
+        }
+      ],
+      "edges": [
+        {
+          "from": "nmsdqfaeeqdlwd",
+          "to": "nmsdqfaegbuk30",
+          "style": 5,
+          "color": "#1d1d1f",
+          "from_side": ""
+        }
+      ],
+      "draw": [
+        {
+          "c": "#ff3b30",
+          "w": 4,
+          "d": "M100 650 L200 700 L350 660"
+        }
+      ]
+    },
+    {
+      "name": "план 2",
+      "nodes": [],
+      "edges": [],
+      "draw": []
+    },
+    {
+      "name": "план 3",
+      "nodes": [],
+      "edges": [],
+      "draw": []
+    },
+    {
+      "name": "план 4",
+      "nodes": [],
+      "edges": [],
+      "draw": []
+    },
+    {
+      "name": "план 5",
+      "nodes": [],
+      "edges": [],
+      "draw": []
+    }
+  ],
+  "title": "план 1",
+  "nodes": [
+    {
+      "id": "nmsdnf7sw39ez5",
+      "kind": "box",
+      "name": "",
+      "text": "",
+      "blocks": [
+        {
+          "t": "text",
+          "v": ""
+        }
+      ],
+      "actions": "",
+      "actions_note": "",
+      "prompt": "",
+      "prompt_note": "",
+      "show_actions": false,
+      "show_prompt": false,
+      "x": 308,
+      "y": 219,
+      "w": 0,
+      "h": 0,
+      "rows": 0,
+      "cols": 0,
+      "cells": {}
+    },
+    {
+      "id": "nmsdq569baiak7",
+      "kind": "box",
+      "name": "",
+      "text": "",
+      "blocks": [
+        {
+          "t": "text",
+          "v": ""
+        }
+      ],
+      "actions": "",
+      "actions_note": "",
+      "prompt": "",
+      "prompt_note": "",
+      "show_actions": false,
+      "show_prompt": false,
+      "x": 805,
+      "y": 67,
+      "w": 360,
+      "h": 0,
+      "rows": 0,
+      "cols": 0,
+      "cells": {}
+    },
+    {
+      "id": "nmsdqfaeeqdlwd",
+      "kind": "box",
+      "name": "",
+      "text": "",
+      "blocks": [
+        {
+          "t": "text",
+          "v": ""
+        }
+      ],
+      "actions": "",
+      "actions_note": "",
+      "prompt": "",
+      "prompt_note": "",
+      "show_actions": false,
+      "show_prompt": false,
+      "x": 560,
+      "y": 60,
+      "w": 0,
+      "h": 0,
+      "rows": 0,
+      "cols": 0,
+      "cells": {}
+    },
+    {
+      "id": "nmsdqfaegbuk30",
+      "kind": "box",
+      "name": "",
+      "text": "",
+      "blocks": [
+        {
+          "t": "text",
+          "v": ""
+        }
+      ],
+      "actions": "",
+      "actions_note": "",
+      "prompt": "",
+      "prompt_note": "",
+      "show_actions": false,
+      "show_prompt": false,
+      "x": 810,
+      "y": 60,
+      "w": 0,
+      "h": 0,
+      "rows": 0,
+      "cols": 0,
+      "cells": {}
+    }
+  ],
+  "edges": [
+    {
+      "from": "nmsdqfaeeqdlwd",
+      "to": "nmsdqfaegbuk30",
+      "style": 5,
+      "color": "#1d1d1f",
+      "from_side": ""
+    }
+  ],
+  "updated_at": 1785792003
+}

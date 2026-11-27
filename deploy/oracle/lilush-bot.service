@@ -1,0 +1,61 @@
+# systemd unit for Lilush bot on Oracle Cloud Free Tier (Ubuntu 22.04 ARM
+# or x86 — both work). Drop into /etc/systemd/system/lilush-bot.service,
+# then:
+#
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now lilush-bot
+#   sudo systemctl status lilush-bot   # health check
+#   sudo journalctl -u lilush-bot -f   # live logs
+#
+# The unit assumes:
+#   /opt/lilush-bot/             — repo checkout owned by `lilush` user
+#   /opt/lilush-bot/.venv/       — uv-created venv (Python 3.11)
+#   /etc/lilush-bot.env          — env file (chmod 600, root-owned)
+#
+# See deploy/oracle/README.md for the one-time provisioning steps.
+
+[Unit]
+Description=Lilush Telegram bot (Chloe Meadowvale)
+Documentation=https://t.me/openaiopus_bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=lilush
+Group=lilush
+WorkingDirectory=/opt/lilush-bot
+EnvironmentFile=/etc/lilush-bot.env
+
+# Use the uv-managed venv. The bot speaks aiohttp on $PORT for the
+# health endpoint + Fable5 / Test / Master Room surfaces; nginx sits
+# in front and terminates TLS (see nginx.conf in this folder).
+ExecStart=/opt/lilush-bot/.venv/bin/python -m bot.main
+
+# Restart aggressively but back off on rapid crashes so a broken
+# config doesn't spin the CPU.
+Restart=always
+RestartSec=5
+StartLimitIntervalSec=300
+StartLimitBurst=10
+
+# Resource hints (Oracle Free Tier ARM VM = 4 OCPU / 24 GB RAM if you
+# went with the Ampere shape, or 1 OCPU / 1 GB if you stuck with x86).
+# Cap memory at 2 GB to leave room for nginx + system; bump on Ampere.
+MemoryHigh=1500M
+MemoryMax=2000M
+
+# Hardening — no extra access beyond what the bot actually needs.
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/lilush-bot /var/lib/lilush-bot /tmp
+
+# Standard log streams go to journald (search with journalctl).
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=lilush-bot
+
+[Install]
+WantedBy=multi-user.target
