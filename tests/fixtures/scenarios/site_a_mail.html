@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ru">
+<!-- Фикстура §16.4: «сайт А» — фейковая почта.
+     Сразу показывает адрес; «письмо с кодом» появляется через 2 секунды
+     после того, как страница получит window.postMessage либо просто по
+     таймеру, если ?autocode=1 — этого достаточно для теста поллинга §15.5. -->
+<head><meta charset="utf-8"><title>Fake Mail</title></head>
+<body>
+  <h1>Почтовый ящик</h1>
+  <div id="email-box">Ваш адрес: route.tester@example.com</div>
+  <div id="inbox">
+    <div id="letter" style="display:none">
+      Ваш код подтверждения: <span id="otp"></span>
+    </div>
+  </div>
+  <script>
+    // «Письмо приходит» через 2 секунды после загрузки, если ?autocode=1.
+    // ВАЖНО: 6-значный код собирается из частей, чтобы литерал кода не
+    // присутствовал в исходнике страницы (иначе baseline-снятие §15.5
+    // увидело бы его в body-фоллбэке ещё ДО «прихода письма»).
+    var params = new URLSearchParams(location.search);
+    if (params.get('autocode') === '1') {
+      setTimeout(function () {
+        document.getElementById('otp').textContent =
+          params.get('code') || ('482' + '913');
+        document.getElementById('letter').style.display = 'block';
+      }, 2000);
+    }
+  </script>
+</body>
+</html>

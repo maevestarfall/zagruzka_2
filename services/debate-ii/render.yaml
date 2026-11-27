@@ -1,0 +1,40 @@
+services:
+- type: web
+  name: debate-ii
+  runtime: python
+  plan: free
+  region: oregon
+  branch: main
+  buildCommand: pip install -r requirements.txt
+  startCommand: python run.py
+  healthCheckPath: /healthz
+  envVars:
+    - key: DEBATE_TOKEN
+      sync: false
+    - key: OPENROUTER_API_KEY
+      sync: false
+    - key: TELEGRAM_BOT_TOKEN
+      sync: false
+    # Optional: pre-set owner. If unset, the first /start claims ownership.
+    - key: OWNER_TG_ID
+      sync: false
+    # Optional: public URL put into debater links (set to your Render URL).
+    - key: PUBLIC_BASE_URL
+      sync: false
+    # Optional: key for the 🧠 Мозг in-bot LLM chat.
+    - key: BRAIN_API_KEY
+      sync: false
+    - key: CONSENSUS_MODE
+      value: unanimous
+    - key: STATE_DIR
+      value: /tmp/data
+    - key: MAX_DOORS
+      value: "20"
+    - key: SEED_DOORS
+      value: "0"
+    - key: SELF_PING
+      value: "1"
+    - key: PING_INTERVAL
+      value: "600"
+    - key: PYTHON_VERSION
+      value: 3.11.9

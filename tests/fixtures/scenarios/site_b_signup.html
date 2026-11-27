@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- Фикстура §16.4: «сайт Б» — форма регистрации в стиле v0.app.
+     Sign Up -> поле Email Address -> Continue with Email -> поле кода
+     (autocomplete="one-time-code") -> Verify -> "Welcome!". -->
+<head><meta charset="utf-8"><title>Fake Signup</title></head>
+<body>
+  <div id="landing">
+    <button id="signup-btn" onclick="showEmail()">Sign Up</button>
+  </div>
+
+  <div id="email-form" style="display:none">
+    <input aria-label="Email Address" placeholder="Email Address" type="email" id="email-input">
+    <button onclick="showCode()">Continue with Email</button>
+  </div>
+
+  <div id="code-form" style="display:none">
+    <input autocomplete="one-time-code" placeholder="Verification code" id="code-input">
+    <button onclick="verify()">Verify</button>
+  </div>
+
+  <div id="done" style="display:none"><h1>Welcome!</h1>
+    <div id="echo"></div>
+  </div>
+
+  <script>
+    function showEmail() {
+      document.getElementById('landing').style.display = 'none';
+      document.getElementById('email-form').style.display = 'block';
+    }
+    function showCode() {
+      var v = document.getElementById('email-input').value;
+      if (!v || v.indexOf('@') < 0) { return; }
+      document.getElementById('email-form').style.display = 'none';
+      document.getElementById('code-form').style.display = 'block';
+    }
+    function verify() {
+      var v = document.getElementById('code-input').value;
+      if (!/^\d{6}$/.test(v)) { return; }
+      document.getElementById('code-form').style.display = 'none';
+      document.getElementById('done').style.display = 'block';
+      document.getElementById('echo').textContent = 'code=' + v;
+    }
+  </script>
+</body>
+</html>
